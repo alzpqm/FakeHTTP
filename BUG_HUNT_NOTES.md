@@ -23,6 +23,11 @@ findings survive outside the chat context.
   partway through.
 - `src/ipv4pkt.c`, `src/ipv6pkt.c`: fixed packet-builder buffer checks that
   previously required one byte more than the actual packet length.
+- `src/ipv6pkt.c`, `include/ipv6pkt.h`, `src/rawsend.c`: parse IPv6
+  hop-by-hop, routing, destination-options, AH, and atomic-fragment extension
+  headers before TCP, reject real fragmented IPv6 TCP packets, and recompute
+  IPv6 TCP checksums with the actual TCP segment length after removing TCP Fast
+  Open cookies.
 
 ## Verified
 
@@ -32,17 +37,24 @@ Validation was run on Debian `192.168.9.190` using the synced worktree in
 - `make CFLAGS='-Wformat=2 -Werror=format'`
 - `make DEBUG=1`
 - `make CFLAGS='-fanalyzer'`
+- Temporary parser test: constructed an IPv6 packet with a Destination Options
+  header before TCP, verified the parsed TCP pointer/payload length/TTL, updated
+  and independently validated the TCP checksum, and verified that a real
+  fragmented IPv6 TCP packet is rejected.
 - Runtime nft + curl smoke test:
   - started FakeHTTP on interface `ens33`
   - `curl -4 http://example.com/` completed successfully
   - log contained `FAKE(*)`
   - no `fakehttp` process or `table ip fakehttp` remained after shutdown
+- OpenWrt 25.12.5 x86_64 SDK cross build:
+  - output binary: x86_64 musl executable
+  - linked against `libnetfilter_queue.so.1`, `libnfnetlink.so.0`,
+    `libmnl.so.0`, `libgcc_s.so.1`, and `libc.so`
+  - sha256:
+    `2af51f2fd755146183a9001afb0ae99f0d6b594df9af83f28cd7e42ab7d805ae`
 
 ## Findings intentionally not fixed yet
 
-- `src/ipv6pkt.c` does not parse IPv6 extension headers. It only accepts packets
-  where TCP follows the base IPv6 header directly. Supporting extension headers
-  should be a separate patch with parser tests.
 - `src/nfqueue.c` returns `nfq_set_verdict()` directly. If that syscall fails,
   there is no second recovery path. This is worth documenting or logging, but a
   robust retry/fallback strategy needs careful NFQUEUE behavior testing.
@@ -125,3 +137,25 @@ Operational findings:
 - `/etc/config/fakehttp.apk-new` exists beside the active config. It appears to
   be a package-default config left after upgrade. It is not breaking the current
   service, but it is worth cleaning up or merging intentionally.
+
+## OpenWrt deployment
+
+The fixed OpenWrt x86_64 musl binary was deployed to the router after SDK
+build validation.
+
+- Deployed binary: `/usr/sbin/fakehttp`
+- Deployed sha256:
+  `2af51f2fd755146183a9001afb0ae99f0d6b594df9af83f28cd7e42ab7d805ae`
+- Previous binary backup:
+  `/usr/sbin/fakehttp.bak-codex-20260704-214926`
+- Running command after restart:
+  `/usr/sbin/fakehttp -i pppoe-wan2 -i pppoe-wancm -i pppoe-wanct -s -h cgw.mil.cn -e cgw.mil.cn -h download.mail.mil.cn -e download.mail.mil.cn`
+- NFQUEUE 512 is owned by the new fakehttp process, and both `ip fakehttp` and
+  `ip6 fakehttp` nft tables are present.
+- Post-deployment smoke test from Debian:
+  - `curl -4 --interface 192.168.9.190 -H 'Host: example.com' http://172.66.147.243/`
+    returned HTTP 200.
+  - `tcpdump -i pppoe-wan2` captured 14 packets with zero kernel drops.
+  - Captured payload order included two fake `GET / HTTP/1.1` requests with
+    `Host: cgw.mil.cn`, followed by the real `Host: example.com` request.
+  - Temporary debug and pcap files were removed after verification.

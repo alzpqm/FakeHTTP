@@ -33,4 +33,7 @@ int fh_pkt6_make(uint8_t *buffer, size_t buffer_size, struct sockaddr *saddr,
                  uint16_t dport_be, uint32_t seq_be, uint32_t ackseq_be,
                  int psh, uint8_t *tcp_payload, size_t tcp_payload_size);
 
+int fh_pkt6_update_tcp_checksum(void *pkt_data, int pkt_len,
+                                struct tcphdr *tcph);
+
 #endif /* FH_IPV6PKT_H */
