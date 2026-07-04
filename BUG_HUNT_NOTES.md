@@ -159,3 +159,18 @@ build validation.
   - Captured payload order included two fake `GET / HTTP/1.1` requests with
     `Host: cgw.mil.cn`, followed by the real `Host: example.com` request.
   - Temporary debug and pcap files were removed after verification.
+- Post-deployment three-exit forced-route test from Debian:
+  - mark `0x100`, table 1, `pppoe-wancm`: route source `10.47.4.170`, curl
+    returned HTTP 200, tcpdump captured 14 packets with zero kernel drops, and
+    payload strings showed two fake `Host: download.mail.mil.cn` requests before
+    the real `Host: example.com` request.
+  - mark `0x200`, table 2, `pppoe-wanct`: route source `125.86.168.66`, curl
+    returned HTTP 200, tcpdump captured 14 packets with zero kernel drops, and
+    payload strings showed two fake `Host: download.mail.mil.cn` requests before
+    the real `Host: example.com` request.
+  - mark `0x300`, table 3, `pppoe-wan2`: route source `10.47.54.204`, curl
+    returned HTTP 200, tcpdump captured 14 packets with zero kernel drops, and
+    payload strings showed two fake `cgw.mil.cn` payloads before the real
+    `Host: example.com` request.
+  - The temporary `inet codex_fh_test` nft table and test pcap/log files were
+    removed after verification.
