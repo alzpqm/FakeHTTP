@@ -111,7 +111,7 @@ int fh_pkt4_make(uint8_t *buffer, size_t buffer_size, struct sockaddr *saddr,
     daddr_in = (struct sockaddr_in *) daddr;
 
     pkt_len = sizeof(*iph) + sizeof(*tcph) + tcp_payload_size;
-    if (buffer_size < pkt_len + 1) {
+    if (buffer_size < pkt_len) {
         E("ERROR: %s", strerror(ENOBUFS));
         return -1;
     }

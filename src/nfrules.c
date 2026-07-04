@@ -58,7 +58,7 @@ int fh_nfrules_setup(void)
             res = fh_ipt4_setup();
             if (res < 0) {
                 E(T(fh_ipt4_setup));
-                return -1;
+                goto cleanup;
             }
         }
 
@@ -66,7 +66,7 @@ int fh_nfrules_setup(void)
             res = fh_ipt6_setup();
             if (res < 0) {
                 E(T(fh_ipt6_setup));
-                return -1;
+                goto cleanup;
             }
         }
     } else {
@@ -74,7 +74,7 @@ int fh_nfrules_setup(void)
             res = fh_nft4_setup();
             if (res < 0) {
                 E(T(fh_nft4_setup));
-                return -1;
+                goto cleanup;
             }
         }
 
@@ -82,12 +82,17 @@ int fh_nfrules_setup(void)
             res = fh_nft6_setup();
             if (res < 0) {
                 E(T(fh_nft6_setup));
-                return -1;
+                goto cleanup;
             }
         }
     }
 
     return 0;
+
+cleanup:
+    fh_nfrules_cleanup();
+
+    return -1;
 }
 
 

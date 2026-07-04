@@ -107,7 +107,7 @@ int fh_pkt6_make(uint8_t *buffer, size_t buffer_size, struct sockaddr *saddr,
     daddr_in6 = (struct sockaddr_in6 *) daddr;
 
     pkt_len = sizeof(*ip6h) + sizeof(*tcph) + tcp_payload_size;
-    if (buffer_size < pkt_len + 1) {
+    if (buffer_size < pkt_len) {
         E("ERROR: %s", strerror(ENOBUFS));
         return -1;
     }

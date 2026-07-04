@@ -98,6 +98,8 @@ int main(int argc, char *argv[])
     int res, opt, exitcode;
     size_t plinfo_cap, iface_cap, plinfo_cnt, iface_cnt;
     const char *iface_info, *direction_info, *ipproto_info;
+    struct payload_info *plinfo_new;
+    const char **iface_new;
 
     exitcode = EXIT_FAILURE;
 
@@ -160,13 +162,14 @@ int main(int argc, char *argv[])
 
                 plinfo_cnt++;
                 if (plinfo_cnt >= plinfo_cap - 1) {
-                    g_ctx.plinfo = realloc(
+                    plinfo_new = realloc(
                         g_ctx.plinfo, 2 * plinfo_cap * sizeof(*g_ctx.plinfo));
-                    if (!g_ctx.plinfo) {
-                        fprintf(stderr, "%s: calloc(): %s.\n", argv[0],
+                    if (!plinfo_new) {
+                        fprintf(stderr, "%s: realloc(): %s.\n", argv[0],
                                 strerror(errno));
                         goto free_mem;
                     }
+                    g_ctx.plinfo = plinfo_new;
                     memset(&g_ctx.plinfo[plinfo_cap], 0,
                            plinfo_cap * sizeof(*g_ctx.plinfo));
                     plinfo_cap *= 2;
@@ -195,13 +198,14 @@ int main(int argc, char *argv[])
             case 'i':
                 iface_cnt++;
                 if (iface_cnt >= iface_cap - 1) {
-                    g_ctx.iface = realloc(
-                        g_ctx.iface, 2 * iface_cap * sizeof(*g_ctx.iface));
-                    if (!g_ctx.iface) {
-                        fprintf(stderr, "%s: calloc(): %s.\n", argv[0],
+                    iface_new = realloc(g_ctx.iface,
+                                         2 * iface_cap * sizeof(*g_ctx.iface));
+                    if (!iface_new) {
+                        fprintf(stderr, "%s: realloc(): %s.\n", argv[0],
                                 strerror(errno));
                         goto free_mem;
                     }
+                    g_ctx.iface = iface_new;
                     memset(&g_ctx.iface[iface_cap], 0,
                            iface_cap * sizeof(*g_ctx.iface));
                     iface_cap *= 2;
@@ -380,12 +384,12 @@ int main(int argc, char *argv[])
     }
 
     E("FakeHTTP version " VERSION);
-    E("");
+    E("%s", "");
     E("FakeHTTP is free software licensed under the GPLv3.");
     E("Distribution without the accompanying source code is not permitted.");
-    E("");
+    E("%s", "");
     E("Home page: https://github.com/MikeWang000000/FakeHTTP");
-    E("");
+    E("%s", "");
 
     res = fh_payload_setup();
     if (res < 0) {

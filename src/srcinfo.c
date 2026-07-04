@@ -34,6 +34,7 @@
 struct srcinfo {
     int initialized;
     uint8_t ttl;
+    uint8_t hwaddr_len;
     uint8_t hwaddr[8];
     struct sockaddr_storage addr;
 };
@@ -82,14 +83,22 @@ int fh_srcinfo_setup(void)
 void fh_srcinfo_cleanup(void)
 {
     free(srci);
+    srci = NULL;
+    srci_end = 0;
 }
 
 
-int fh_srcinfo_put(struct sockaddr *addr, uint8_t ttl, uint8_t hwaddr[8])
+int fh_srcinfo_put(struct sockaddr *addr, uint8_t ttl, uint8_t hwaddr[8],
+                   uint8_t hwaddr_len)
 {
     struct srcinfo *info;
 
     info = &srci[srci_end];
+
+    if (hwaddr_len > sizeof(info->hwaddr)) {
+        E("ERROR: invalid hardware address length: %u", (unsigned) hwaddr_len);
+        return -1;
+    }
 
     if (addr->sa_family == AF_INET) {
         memcpy(&info->addr, addr, sizeof(struct sockaddr_in));
@@ -101,7 +110,9 @@ int fh_srcinfo_put(struct sockaddr *addr, uint8_t ttl, uint8_t hwaddr[8])
     }
 
     info->ttl = ttl;
-    memcpy(info->hwaddr, hwaddr, sizeof(info->hwaddr));
+    info->hwaddr_len = hwaddr_len;
+    memset(info->hwaddr, 0, sizeof(info->hwaddr));
+    memcpy(info->hwaddr, hwaddr, hwaddr_len);
     info->initialized = 1;
 
     srci_end = (srci_end + 1) % CAPACITY;
@@ -110,18 +121,21 @@ int fh_srcinfo_put(struct sockaddr *addr, uint8_t ttl, uint8_t hwaddr[8])
 }
 
 
-int fh_srcinfo_get(struct sockaddr *addr, uint8_t *ttl, uint8_t hwaddr[8])
+int fh_srcinfo_get(struct sockaddr *addr, uint8_t *ttl, uint8_t hwaddr[8],
+                   uint8_t *hwaddr_len)
 {
-    size_t i;
+    size_t i, idx;
     struct srcinfo *info;
 
     for (i = 0; i < CAPACITY; i++) {
-        info = &srci[(srci_end - i - 1) % CAPACITY];
+        idx = (srci_end + CAPACITY - i - 1) % CAPACITY;
+        info = &srci[idx];
         if (!info->initialized) {
             return 1;
         }
         if (sameip(addr, (struct sockaddr *) &info->addr)) {
             *ttl = info->ttl;
+            *hwaddr_len = info->hwaddr_len;
             memcpy(hwaddr, info->hwaddr, sizeof(info->hwaddr));
             return 0;
         }
