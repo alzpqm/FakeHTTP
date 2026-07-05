@@ -58,35 +58,41 @@ void fh_logger_cleanup(void)
 void fh_logger(const char *funcname, const char *filename, unsigned long line,
                int end, const char *fmt, ...)
 {
+    FILE *logfp;
     va_list args;
     time_t t;
     char time_buff[32];
     struct tm *tmi;
 
+    logfp = g_ctx.logfp ? g_ctx.logfp : stderr;
+
     t = time(NULL);
     tmi = localtime(&t);
     strftime(time_buff, sizeof(time_buff), "%Y-%m-%d %H:%M:%S", tmi);
 
-    fprintf(g_ctx.logfp, "%19s [%13s:%03lu] ", time_buff, filename, line);
+    fprintf(logfp, "%19s [%13s:%03lu] ", time_buff, filename, line);
     va_start(args, fmt);
-    vfprintf(g_ctx.logfp, fmt, args);
+    vfprintf(logfp, fmt, args);
     va_end(args);
-    fputc('\n', g_ctx.logfp);
+    fputc('\n', logfp);
 
     if (end) {
-        fprintf(g_ctx.logfp, "%19s [%13s:%03lu]     at %s()\n", time_buff,
-                filename, line, funcname);
+        fprintf(logfp, "%19s [%13s:%03lu]     at %s()\n", time_buff, filename,
+                line, funcname);
     }
-    fflush(g_ctx.logfp);
+    fflush(logfp);
 }
 
 
 void fh_logger_raw(const char *fmt, ...)
 {
+    FILE *logfp;
     va_list args;
 
+    logfp = g_ctx.logfp ? g_ctx.logfp : stderr;
+
     va_start(args, fmt);
-    vfprintf(g_ctx.logfp, fmt, args);
+    vfprintf(logfp, fmt, args);
     va_end(args);
-    fflush(g_ctx.logfp);
+    fflush(logfp);
 }

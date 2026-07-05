@@ -22,6 +22,7 @@
 
 #include <errno.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
@@ -125,8 +126,9 @@ ret_accept:
 
 int fh_nfq_setup(void)
 {
-    int res, opt;
+    int res, opt, force_errno;
     char *err_hint;
+    char force_err[128];
     socklen_t opt_len;
 
     h = nfq_open();
@@ -193,8 +195,18 @@ int fh_nfq_setup(void)
         opt = 1048576;
         res = setsockopt(fd, SOL_SOCKET, SO_RCVBUFFORCE, &opt, sizeof(opt));
         if (res < 0) {
-            E("ERROR: setsockopt(): SO_RCVBUFFORCE: %s", strerror(errno));
-            goto destroy_queue;
+            force_errno = errno;
+            snprintf(force_err, sizeof(force_err), "%s",
+                     strerror(force_errno));
+            res = setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(opt));
+            if (res < 0) {
+                E("ERROR: setsockopt(): SO_RCVBUFFORCE: %s; SO_RCVBUF: %s",
+                  force_err, strerror(errno));
+                goto destroy_queue;
+            }
+            E("WARNING: setsockopt(): SO_RCVBUFFORCE: %s; using SO_RCVBUF "
+              "instead.",
+              force_err);
         }
     }
 
