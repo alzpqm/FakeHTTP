@@ -75,7 +75,7 @@ OpenWrt target:
 - Hostname: `cache1`
 - Package manager: APK
 
-Installed FakeHTTP package state:
+Installed FakeHTTP package state before the final `99.2-r2` upgrade:
 
 - `fakehttp-99.1-r1 x86_64 {local/fakehttp}`
 - `luci-app-fakehttp-99.1-r1 x86_64 {local/luci-app-fakehttp}`
@@ -95,7 +95,7 @@ Runtime command observed:
 /usr/bin/fakehttp -i pppoe-wan2 -i pppoe-wancm -i pppoe-wanct -s -h cgw.mil.cn -e cgw.mil.cn -h download.mail.mil.cn -e download.mail.mil.cn
 ```
 
-Health checks observed:
+Health checks observed before the `99.2-r2` upgrade:
 
 - FakeHTTP process was running for more than five hours.
 - RSS was about 904 KiB.
@@ -105,6 +105,57 @@ Health checks observed:
 - `ip fakehttp` and `ip6 fakehttp` nft tables were present.
 - `pppoe-wan2`, `pppoe-wancm`, and `pppoe-wanct` each passed forced-interface
   ping checks with 0% packet loss.
+
+## Final Package Deployment
+
+Current source backup:
+
+- Branch: `codex/bug-hunt`
+- Pushed to fork: `https://github.com/alzpqm/FakeHTTP.git`
+- Current commit after package release bump: `ae030a0`
+
+Built local test packages:
+
+- Debian build output:
+  `/root/fakehttp-openwrt-test/manual/out-ae030a0/`
+- Local Mac artifact backup:
+  `dist/openwrt/`
+- `fakehttp-99.2-r2.apk` sha256:
+  `070f7592c3346cb32576f3a7c52d565bcfb89b8942fd0d76cf0d05142ba10c28`
+- `luci-app-fakehttp-99.2-r2.apk` sha256:
+  `e021d54e2cd8588f17b5973a1fd678ce97e5f6c1765438dcb04954645f77f3e2`
+
+Router package state after upgrade:
+
+- `fakehttp-99.2-r2 x86_64 {local/fakehttp}`
+- `luci-app-fakehttp-99.2-r2 x86_64 {local/luci-app-fakehttp}`
+- `kmod-nfnetlink-queue-6.12.94-r1` installed
+- `kmod-nft-queue-6.12.94-r1` installed
+- Active binary: `/usr/bin/fakehttp`
+- Active binary sha256:
+  `a66f16a0124c05740b78c79f9296807314315bc16da5c425d8df698464e453bd`
+- Embedded version string:
+  `FakeHTTP version 99.2-r2-ae030a0`
+
+Router runtime after upgrade:
+
+- Service status: running.
+- Init boot hook: enabled.
+- Process observed: `/usr/bin/fakehttp`.
+- Active config preserved at `/etc/config/fakehttp`.
+- The temporary `/etc/config/fakehttp.apk-new` file was removed after verifying
+  the active config was preserved.
+- `ip fakehttp` and `ip6 fakehttp` nft tables were present.
+- NFQUEUE 512 was owned by FakeHTTP and had zero kernel/user drops.
+- `pppoe-wan2`, `pppoe-wancm`, and `pppoe-wanct` all passed ping checks with
+  0% packet loss.
+- Packet captures on all three PPPoE exits saw fake HTTP payloads before the
+  real HTTP request:
+  - `pppoe-wan2`: fake `Host: cgw.mil.cn`, real `Host: 118.64.0.36`
+  - `pppoe-wancm`: fake `Host: download.mail.mil.cn`, real
+    `Host: 118.64.0.36`
+  - `pppoe-wanct`: fake `Host: cgw.mil.cn`, real `Host: 118.64.0.36`
+- Each successful capture reported zero tcpdump kernel drops.
 
 ## Router Backups
 
@@ -117,8 +168,12 @@ Older router files were backed up under:
 That backup included the older package files/config before local package
 replacement.
 
-## Current Follow-Up
+Upgrade backups from the final package work:
 
-The next clean step is to rebuild a new APK from this exact `codex/bug-hunt`
-worktree after the OpenWrt package and LuCI files are committed, then install it
-on the router so the router package version and git commit are traceable.
+```text
+/root/fakehttp-upgrade-backup-20260705-151630
+/root/fakehttp-upgrade-backup-20260705-151827
+```
+
+The second backup is the one taken immediately before upgrading to
+`fakehttp-99.2-r2`.
