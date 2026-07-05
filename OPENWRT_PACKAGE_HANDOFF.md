@@ -218,6 +218,35 @@ Follow-up observation on 2026-07-05 around 23:26 Asia/Taipei:
   counters and error-log checks; the only residual risks it noted were normal
   long-horizon stability and untested high-pressure traffic profiles.
 
+3-minute non-silent runtime log test on 2026-07-06 around 07:34-07:38
+Asia/Taipei:
+
+- Before the test, `fakehttp.globals.silent=1`, service status was running, and
+  NFQUEUE 512 had zero kernel/user drops.
+- Temporarily set `fakehttp.globals.silent=0`, committed UCI, and restarted
+  FakeHTTP. The non-silent test process was PID `4893`.
+- During the 3-minute window, ran 9 rounds of forced-interface HTTP requests
+  through `pppoe-wan2`, `pppoe-wancm`, and `pppoe-wanct`. All 27 requests
+  completed and returned HTTP 404 from the test endpoint, which is acceptable
+  for the endpoint and proves the TCP/HTTP path stayed usable.
+- At the end of the non-silent window, NFQUEUE 512 was still owned by PID
+  `4893`, queue length was 0, and kernel/user drops were both 0. The observed
+  queue packet counter for that PID was 6,137.
+- Non-silent `logread` captured verbose runtime activity:
+  - 907 lines for PID `4893`
+  - 150 lines containing `FAKE`
+  - 150 lines containing `SYN-ACK`
+- The verbose log contained normal connection trace lines such as `SYN`,
+  `SYN-ACK`, and `FAKE(*)`. The sample includes both induced test traffic and
+  ambient router traffic; it should not be interpreted as only the 27 curl
+  requests.
+- A grep for PID `4893` messages containing `ERROR`, `WARNING`, `too many`,
+  `failed`, `segfault`, `oom`, or `invalid` returned no lines.
+- After the test, restored `fakehttp.globals.silent=1`, committed UCI, and
+  restarted FakeHTTP. Final service state was boot-enabled and running as PID
+  `6557`, with NFQUEUE 512 owned by PID `6557` and zero kernel/user drops.
+- Final `dmesg` suspicious grep was empty.
+
 ## Router Backups
 
 Older router files were backed up under:
