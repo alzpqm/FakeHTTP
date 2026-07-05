@@ -182,6 +182,38 @@ Follow-up observation on 2026-07-05 around 23:26 Asia/Taipei:
   ping checks to `223.5.5.5` with 0% packet loss.
 - `dmesg` showed no fakehttp/NFQUEUE/OOM/segfault messages.
 
+8-hour follow-up observation on 2026-07-06 around 07:18 Asia/Taipei:
+
+- Router time was `Sun Jul 5 23:18:10 GMT 2026`.
+- Router uptime was 4 days and 21 hours; system load was about
+  `0.08, 0.11, 0.09`.
+- Installed packages were still `fakehttp-99.2-r2` and
+  `luci-app-fakehttp-99.2-r2`.
+- FakeHTTP service was still boot-enabled and running:
+  `/etc/init.d/fakehttp enabled` returned `0`, status was `running`, PID was
+  `753`.
+- Active binary remained `/usr/bin/fakehttp`, sha256
+  `a66f16a0124c05740b78c79f9296807314315bc16da5c425d8df698464e453bd`, with
+  embedded version `FakeHTTP version 99.2-r2-ae030a0`.
+- Process resource usage remained small: VmRSS about 872 KiB, 5 file
+  descriptors, and 1 thread.
+- NFQUEUE 512 was still owned by FakeHTTP PID `753`; queue length was 0,
+  kernel drops were 0, user drops were 0, and the observed packet sequence
+  counter was 523,610.
+- `ip fakehttp` and `ip6 fakehttp` nft tables remained present for
+  `pppoe-wan2`, `pppoe-wancm`, and `pppoe-wanct`.
+- Forced-interface pings from all three exits to `223.5.5.5` returned 3/3
+  packets with 0% loss. Average RTTs were about 32.7 ms, 34.1 ms, and 14.8 ms.
+- `logread` fakehttp entries after the package restart only showed normal
+  startup lines. A suspicious log grep for fakehttp segfault/OOM/fail/cannot/
+  invalid/drop/crash terms was empty.
+- `dmesg` suspicious grep was empty.
+- Gemini CLI was run with temporary
+  `GOOGLE_CLOUD_PROJECT=rock-strength-463610-g1` and no API key. It agreed
+  there was no major blocker for promoting the package; the only residual
+  risks it noted were normal long-horizon stability and untested high-pressure
+  traffic profiles.
+
 ## Router Backups
 
 Older router files were backed up under:
