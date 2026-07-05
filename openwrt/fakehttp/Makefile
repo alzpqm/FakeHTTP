@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=fakehttp
-PKG_VERSION:=dev
+PKG_VERSION:=99.2
 PKG_RELEASE:=1
 
 PKG_LICENSE:=GPL-3.0-or-later
@@ -10,6 +10,7 @@ PKG_MAINTAINER:=FakeHTTP maintainers
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 FAKEHTTP_SOURCE_DIR?=$(realpath $(CURDIR)/../..)
+FAKEHTTP_BUILD_VERSION?=$(PKG_VERSION)-r$(PKG_RELEASE)
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -45,7 +46,7 @@ define Build/Compile
 		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
 		LDFLAGS="$(TARGET_LDFLAGS)" \
 		PREFIX=/usr \
-		VERSION="$(PKG_VERSION)-$(PKG_RELEASE)"
+		VERSION="$(FAKEHTTP_BUILD_VERSION)"
 endef
 
 define Package/fakehttp/install
