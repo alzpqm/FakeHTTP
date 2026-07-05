@@ -112,7 +112,12 @@ Current source backup:
 
 - Branch: `codex/bug-hunt`
 - Pushed to fork: `https://github.com/alzpqm/FakeHTTP.git`
-- Current commit after package release bump: `ae030a0`
+- Current deployed package source commit: `ae030a0`
+- Follow-up package source has been bumped to `99.2-r3` to harden upgrade
+  maintainer-script behavior. The `prerm` script now stops the service but only
+  disables the boot hook when called with an explicit remove/deinstall/uninstall
+  action, preventing local APK upgrades from accidentally clearing
+  `/etc/rc.d/S99fakehttp`.
 
 Built local test packages:
 
@@ -156,6 +161,25 @@ Router runtime after upgrade:
     `Host: 118.64.0.36`
   - `pppoe-wanct`: fake `Host: cgw.mil.cn`, real `Host: 118.64.0.36`
 - Each successful capture reported zero tcpdump kernel drops.
+
+Follow-up observation on 2026-07-05 around 23:26 Asia/Taipei:
+
+- Router still had `fakehttp-99.2-r2` and `luci-app-fakehttp-99.2-r2`
+  installed.
+- Service was running as PID `753` with RSS about 832 KiB, 5 file descriptors,
+  and 1 thread.
+- `/usr/bin/fakehttp` sha256 was still
+  `a66f16a0124c05740b78c79f9296807314315bc16da5c425d8df698464e453bd`.
+- Embedded version string was still `FakeHTTP version 99.2-r2-ae030a0`.
+- `/etc/init.d/fakehttp enabled` initially returned non-zero after the local APK
+  upgrade. Running `/etc/init.d/fakehttp enable` recreated
+  `/etc/rc.d/S99fakehttp` and `/etc/rc.d/K10fakehttp`; it now returns `0`.
+- NFQUEUE 512 was owned by FakeHTTP PID `753`, with zero kernel/user drops and
+  over 10k packets observed.
+- `ip fakehttp` and `ip6 fakehttp` nft tables were present for all three exits.
+- `pppoe-wan2`, `pppoe-wancm`, and `pppoe-wanct` each passed forced-interface
+  ping checks to `223.5.5.5` with 0% packet loss.
+- `dmesg` showed no fakehttp/NFQUEUE/OOM/segfault messages.
 
 ## Router Backups
 

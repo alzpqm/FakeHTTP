@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=fakehttp
 PKG_VERSION:=99.2
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_LICENSE_FILES:=LICENSE
@@ -66,7 +66,11 @@ endef
 define Package/fakehttp/prerm
 #!/bin/sh
 [ -n "$${IPKG_INSTROOT}" ] || /etc/init.d/fakehttp stop >/dev/null 2>&1
-[ -n "$${IPKG_INSTROOT}" ] || /etc/init.d/fakehttp disable >/dev/null 2>&1
+case "$${1:-}" in
+remove|deinstall|uninstall)
+	[ -n "$${IPKG_INSTROOT}" ] || /etc/init.d/fakehttp disable >/dev/null 2>&1
+	;;
+esac
 exit 0
 endef
 
