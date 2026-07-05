@@ -204,15 +204,19 @@ Follow-up observation on 2026-07-05 around 23:26 Asia/Taipei:
   `pppoe-wan2`, `pppoe-wancm`, and `pppoe-wanct`.
 - Forced-interface pings from all three exits to `223.5.5.5` returned 3/3
   packets with 0% loss. Average RTTs were about 32.7 ms, 34.1 ms, and 14.8 ms.
+- The router was running with `fakehttp.globals.silent=1`, so per-connection
+  runtime trace messages were intentionally suppressed. The `logread` check only
+  proves that non-silent startup/exit/error logs were clean; it is not evidence
+  of verbose per-connection logging.
 - `logread` fakehttp entries after the package restart only showed normal
   startup lines. A suspicious log grep for fakehttp segfault/OOM/fail/cannot/
   invalid/drop/crash terms was empty.
 - `dmesg` suspicious grep was empty.
 - Gemini CLI was run with temporary
   `GOOGLE_CLOUD_PROJECT=rock-strength-463610-g1` and no API key. It agreed
-  there was no major blocker for promoting the package; the only residual
-  risks it noted were normal long-horizon stability and untested high-pressure
-  traffic profiles.
+  there was no major blocker for promoting the package based on the health
+  counters and error-log checks; the only residual risks it noted were normal
+  long-horizon stability and untested high-pressure traffic profiles.
 
 ## Router Backups
 
