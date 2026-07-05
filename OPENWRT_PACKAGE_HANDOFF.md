@@ -112,6 +112,7 @@ Current source backup:
 
 - Branch: `codex/bug-hunt`
 - Pushed to fork: `https://github.com/alzpqm/FakeHTTP.git`
+- Latest follow-up source commit: `f48358e`
 - Current deployed package source commit: `ae030a0`
 - Follow-up package source has been bumped to `99.2-r3` to harden upgrade
   maintainer-script behavior. The `prerm` script now stops the service but only
