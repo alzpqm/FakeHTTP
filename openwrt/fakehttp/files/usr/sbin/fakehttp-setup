@@ -1,0 +1,70 @@
+#!/bin/sh
+
+. /lib/functions/network.sh
+
+usage()
+{
+	cat <<'EOF'
+Usage: fakehttp-setup [-e|--https] <hostname> [network-or-interface]
+
+Examples:
+  fakehttp-setup www.example.com wan
+  fakehttp-setup --https www.example.com pppoe-wan
+EOF
+}
+
+mode=http
+
+case "$1" in
+	-e|--https)
+		mode=https
+		shift
+		;;
+	-h|--help|"")
+		usage
+		exit 0
+		;;
+esac
+
+host="$1"
+iface="${2:-wan}"
+
+if [ -z "$host" ]; then
+	usage >&2
+	exit 1
+fi
+
+network_flush_cache
+if network_get_device dev "$iface"; then
+	iface="$dev"
+fi
+
+while uci -q delete fakehttp.@payload[0]; do :; done
+
+uci -q batch <<EOF
+set fakehttp.globals='globals'
+set fakehttp.globals.enabled='1'
+set fakehttp.globals.silent='1'
+delete fakehttp.globals.interface
+add_list fakehttp.globals.interface='$iface'
+add fakehttp payload
+set fakehttp.@payload[-1].enabled='1'
+set fakehttp.@payload[-1].type='$mode'
+set fakehttp.@payload[-1].payload='$host'
+set fakehttp.advanced='advanced'
+set fakehttp.advanced.skip='0'
+set fakehttp.advanced.disable_estimation='0'
+set fakehttp.advanced.pct='-1'
+set fakehttp.advanced.fwmark_bypassing='-1'
+set fakehttp.advanced.fwmark_handle='-1'
+set fakehttp.advanced.queue_number='-1'
+set fakehttp.advanced.repeat='-1'
+set fakehttp.advanced.ttl='-1'
+set fakehttp.advanced.use_iptables='0'
+commit fakehttp
+EOF
+
+/etc/init.d/fakehttp enable
+/etc/init.d/fakehttp restart
+
+echo "FakeHTTP is enabled on '$iface' with $mode payload '$host'."

@@ -20,13 +20,14 @@
 #ifndef FH_GLOBVAR_H
 #define FH_GLOBVAR_H
 
+#include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
 
 #include "payload.h"
 
 struct fh_context {
-    int exit;
+    volatile sig_atomic_t exit;
     FILE *logfp;
     /* -b, -e, -h */ struct payload_info *plinfo;
     /* -0 */ int inbound;

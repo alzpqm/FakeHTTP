@@ -29,13 +29,19 @@
         E(__VA_ARGS__);  \
     }
 
+#if defined(__GNUC__) || defined(__clang__)
+#define FH_PRINTF(fmt, args) __attribute__((format(printf, fmt, args)))
+#else
+#define FH_PRINTF(fmt, args)
+#endif
+
 int fh_logger_setup(void);
 
 void fh_logger_cleanup(void);
 
 void fh_logger(const char *funcname, const char *filename, unsigned long line,
-               int end, const char *fmt, ...);
+               int end, const char *fmt, ...) FH_PRINTF(5, 6);
 
-void fh_logger_raw(const char *fmt, ...);
+void fh_logger_raw(const char *fmt, ...) FH_PRINTF(1, 2);
 
 #endif /* FH_LOGGING_H */

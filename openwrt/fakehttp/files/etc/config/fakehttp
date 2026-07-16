@@ -1,0 +1,20 @@
+config globals 'globals'
+	option enabled '0'
+	option silent '1'
+	list interface 'wan'
+
+config payload
+	option enabled '1'
+	option type 'http'
+	option payload 'www.example.com'
+
+config advanced 'advanced'
+	option skip '0'
+	option disable_estimation '0'
+	option pct '-1'
+	option fwmark_bypassing '-1'
+	option fwmark_handle '-1'
+	option queue_number '-1'
+	option repeat '-1'
+	option ttl '-1'
+	option use_iptables '0'

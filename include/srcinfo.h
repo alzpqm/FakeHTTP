@@ -27,8 +27,10 @@ int fh_srcinfo_setup(void);
 
 void fh_srcinfo_cleanup(void);
 
-int fh_srcinfo_put(struct sockaddr *addr, uint8_t ttl, uint8_t hwaddr[8]);
+int fh_srcinfo_put(struct sockaddr *addr, uint8_t ttl, uint8_t hwaddr[8],
+                   uint8_t hwaddr_len);
 
-int fh_srcinfo_get(struct sockaddr *addr, uint8_t *ttl, uint8_t hwaddr[8]);
+int fh_srcinfo_get(struct sockaddr *addr, uint8_t *ttl, uint8_t hwaddr[8],
+                   uint8_t *hwaddr_len);
 
 #endif /* FH_SRCINFO_H */

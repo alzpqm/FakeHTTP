@@ -22,6 +22,7 @@
 
 #include <errno.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
@@ -47,6 +48,7 @@ static int callback(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
                     struct nfq_data *nfa, void *data)
 {
     uint32_t pkt_id, iifindex, oifindex;
+    uint16_t hw_addrlen;
     int verdict, pkt_len, modified;
     struct nfqnl_msg_packet_hdr *ph;
     unsigned char *pkt_data;
@@ -91,8 +93,15 @@ static int callback(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
     /* hwph can be null on PPP interfaces or POSTROUTING packets */
     hwph = nfq_get_packet_hw(nfa);
     if (hwph) {
-        sll.sll_halen = sizeof(hwph->hw_addr);
-        memcpy(sll.sll_addr, hwph->hw_addr, sizeof(hwph->hw_addr));
+        hw_addrlen = ntohs(hwph->hw_addrlen);
+        if (hw_addrlen > sizeof(sll.sll_addr)) {
+            EE("ERROR: invalid hardware address length: %u",
+               (unsigned) hw_addrlen);
+            goto ret_accept;
+        }
+
+        sll.sll_halen = hw_addrlen;
+        memcpy(sll.sll_addr, hwph->hw_addr, hw_addrlen);
     } else {
         sll.sll_halen = 0;
         memset(sll.sll_addr, 0, sizeof(sll.sll_addr));
@@ -117,8 +126,9 @@ ret_accept:
 
 int fh_nfq_setup(void)
 {
-    int res, opt;
+    int res, opt, force_errno;
     char *err_hint;
+    char force_err[128];
     socklen_t opt_len;
 
     h = nfq_open();
@@ -185,8 +195,18 @@ int fh_nfq_setup(void)
         opt = 1048576;
         res = setsockopt(fd, SOL_SOCKET, SO_RCVBUFFORCE, &opt, sizeof(opt));
         if (res < 0) {
-            E("ERROR: setsockopt(): SO_RCVBUFFORCE: %s", strerror(errno));
-            goto destroy_queue;
+            force_errno = errno;
+            snprintf(force_err, sizeof(force_err), "%s",
+                     strerror(force_errno));
+            res = setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(opt));
+            if (res < 0) {
+                E("ERROR: setsockopt(): SO_RCVBUFFORCE: %s; SO_RCVBUF: %s",
+                  force_err, strerror(errno));
+                goto destroy_queue;
+            }
+            E("WARNING: setsockopt(): SO_RCVBUFFORCE: %s; using SO_RCVBUF "
+              "instead.",
+              force_err);
         }
     }
 

@@ -20,6 +20,7 @@
 #define _GNU_SOURCE
 #include "ipv6pkt.h"
 
+#include <arpa/inet.h>
 #include <errno.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -33,40 +34,199 @@
 #include "globvar.h"
 #include "logging.h"
 
+static int pkt6_total_len(struct ip6_hdr *ip6h, int pkt_len, size_t *total_len)
+{
+    size_t payload_len;
+
+    payload_len = ntohs(ip6h->ip6_plen);
+    *total_len = sizeof(*ip6h) + payload_len;
+
+    if (*total_len > (size_t) pkt_len) {
+        E("ERROR: invalid packet length: %d", pkt_len);
+        return -1;
+    }
+
+    return 0;
+}
+
+
+static int pkt6_find_tcp(void *pkt_data, int pkt_len, struct ip6_hdr **ip6h_ptr,
+                         struct tcphdr **tcph_ptr, size_t *tcp_offset,
+                         size_t *tcp_len)
+{
+    struct ip6_hdr *ip6h;
+    struct ip6_ext *exth;
+    struct ip6_frag *fragh;
+    size_t offset, total_len, ext_len;
+    uint8_t nexthdr;
+    uint16_t frag_offlg;
+
+    if ((size_t) pkt_len < sizeof(*ip6h)) {
+        E("ERROR: invalid packet length: %d", pkt_len);
+        return -1;
+    }
+
+    ip6h = (struct ip6_hdr *) pkt_data;
+    if (pkt6_total_len(ip6h, pkt_len, &total_len) < 0) {
+        return -1;
+    }
+
+    nexthdr = ip6h->ip6_nxt;
+    offset = sizeof(*ip6h);
+
+    while (nexthdr != IPPROTO_TCP) {
+        switch (nexthdr) {
+            case IPPROTO_HOPOPTS:
+            case IPPROTO_ROUTING:
+            case IPPROTO_DSTOPTS:
+                if (total_len - offset < sizeof(*exth)) {
+                    E("ERROR: invalid IPv6 extension header length");
+                    return -1;
+                }
+                exth = (struct ip6_ext *) ((uint8_t *) pkt_data + offset);
+                ext_len = ((size_t) exth->ip6e_len + 1) * 8;
+                if (ext_len < sizeof(*exth) || total_len - offset < ext_len) {
+                    E("ERROR: invalid IPv6 extension header length");
+                    return -1;
+                }
+                nexthdr = exth->ip6e_nxt;
+                offset += ext_len;
+                break;
+
+            case IPPROTO_FRAGMENT:
+                if (total_len - offset < sizeof(*fragh)) {
+                    E("ERROR: invalid IPv6 fragment header length");
+                    return -1;
+                }
+                fragh = (struct ip6_frag *) ((uint8_t *) pkt_data + offset);
+                frag_offlg = ntohs(fragh->ip6f_offlg);
+                if (frag_offlg & (IP6F_OFF_MASK | IP6F_MORE_FRAG)) {
+                    E("ERROR: unsupported fragmented IPv6 TCP packet");
+                    return -1;
+                }
+                nexthdr = fragh->ip6f_nxt;
+                offset += sizeof(*fragh);
+                break;
+
+            case IPPROTO_AH:
+                if (total_len - offset < sizeof(*exth)) {
+                    E("ERROR: invalid IPv6 AH length");
+                    return -1;
+                }
+                exth = (struct ip6_ext *) ((uint8_t *) pkt_data + offset);
+                ext_len = ((size_t) exth->ip6e_len + 2) * 4;
+                if (ext_len < sizeof(*exth) || total_len - offset < ext_len) {
+                    E("ERROR: invalid IPv6 AH length");
+                    return -1;
+                }
+                nexthdr = exth->ip6e_nxt;
+                offset += ext_len;
+                break;
+
+            default:
+                E("ERROR: not a TCP packet (next header %d)", (int) nexthdr);
+                return -1;
+        }
+    }
+
+    if (total_len - offset < sizeof(struct tcphdr)) {
+        E("ERROR: invalid packet length: %d", pkt_len);
+        return -1;
+    }
+
+    *ip6h_ptr = ip6h;
+    *tcph_ptr = (struct tcphdr *) ((uint8_t *) pkt_data + offset);
+    *tcp_offset = offset;
+    *tcp_len = total_len - offset;
+
+    return 0;
+}
+
+
+static uint32_t csum_add(uint32_t sum, const void *data, size_t len)
+{
+    const uint8_t *p;
+
+    p = data;
+    while (len > 1) {
+        sum += ((uint16_t) p[0] << 8) | p[1];
+        p += 2;
+        len -= 2;
+    }
+
+    if (len) {
+        sum += (uint16_t) p[0] << 8;
+    }
+
+    return sum;
+}
+
+
+static uint16_t csum_fold(uint32_t sum)
+{
+    while (sum >> 16) {
+        sum = (sum & 0xffff) + (sum >> 16);
+    }
+
+    return ~sum;
+}
+
+
+int fh_pkt6_update_tcp_checksum(void *pkt_data, int pkt_len,
+                                struct tcphdr *tcph)
+{
+    struct ip6_hdr *ip6h;
+    struct tcphdr *parsed_tcph;
+    size_t tcp_offset, tcp_len;
+    uint32_t sum, tcp_len_be, nexthdr_be;
+
+    if (pkt6_find_tcp(pkt_data, pkt_len, &ip6h, &parsed_tcph, &tcp_offset,
+                      &tcp_len) < 0 ||
+        parsed_tcph != tcph) {
+        E(T(pkt6_find_tcp));
+        return -1;
+    }
+
+    (void) tcp_offset;
+
+    tcp_len_be = htonl(tcp_len);
+    nexthdr_be = htonl(IPPROTO_TCP);
+
+    tcph->check = 0;
+
+    sum = 0;
+    sum = csum_add(sum, &ip6h->ip6_src, sizeof(ip6h->ip6_src));
+    sum = csum_add(sum, &ip6h->ip6_dst, sizeof(ip6h->ip6_dst));
+    sum = csum_add(sum, &tcp_len_be, sizeof(tcp_len_be));
+    sum = csum_add(sum, &nexthdr_be, sizeof(nexthdr_be));
+    sum = csum_add(sum, tcph, tcp_len);
+
+    tcph->check = htons(csum_fold(sum));
+    return 0;
+}
+
+
 int fh_pkt6_parse(void *pkt_data, int pkt_len, struct sockaddr *saddr,
                   struct sockaddr *daddr, uint8_t *ttl,
                   struct tcphdr **tcph_ptr, int *tcp_payload_len)
 {
     struct ip6_hdr *ip6h;
     struct tcphdr *tcph;
-    int ip6h_len, tcph_len;
+    size_t tcp_offset, tcp_len;
+    int tcph_len;
     struct sockaddr_in6 *saddr_in6, *daddr_in6;
 
     saddr_in6 = (struct sockaddr_in6 *) saddr;
     daddr_in6 = (struct sockaddr_in6 *) daddr;
 
-    ip6h_len = sizeof(*ip6h);
-
-    if (pkt_len < ip6h_len) {
-        E("ERROR: invalid packet length: %d", pkt_len);
+    if (pkt6_find_tcp(pkt_data, pkt_len, &ip6h, &tcph, &tcp_offset,
+                      &tcp_len) < 0) {
+        E(T(pkt6_find_tcp));
         return -1;
     }
 
-    ip6h = (struct ip6_hdr *) pkt_data;
-
-    if (ip6h->ip6_nxt != IPPROTO_TCP) {
-        E("ERROR: not a TCP packet (next header %d)", (int) ip6h->ip6_nxt);
-        return -1;
-    }
-
-    if ((size_t) pkt_len < ip6h_len + sizeof(*tcph)) {
-        E("ERROR: invalid packet length: %d", pkt_len);
-        return -1;
-    }
-
-    tcph = (struct tcphdr *) ((uint8_t *) pkt_data + ip6h_len);
     tcph_len = tcph->doff * 4;
-    if (pkt_len < ip6h_len + tcph_len) {
+    if ((size_t) tcph_len < sizeof(*tcph) || tcp_len < (size_t) tcph_len) {
         E("ERROR: invalid packet length: %d", pkt_len);
         return -1;
     }
@@ -81,7 +241,7 @@ int fh_pkt6_parse(void *pkt_data, int pkt_len, struct sockaddr *saddr,
 
     *ttl = ip6h->ip6_hlim;
     *tcph_ptr = tcph;
-    *tcp_payload_len = pkt_len - ip6h_len - tcph_len;
+    *tcp_payload_len = (int) (tcp_len - (size_t) tcph_len);
 
     return 0;
 }
@@ -107,7 +267,7 @@ int fh_pkt6_make(uint8_t *buffer, size_t buffer_size, struct sockaddr *saddr,
     daddr_in6 = (struct sockaddr_in6 *) daddr;
 
     pkt_len = sizeof(*ip6h) + sizeof(*tcph) + tcp_payload_size;
-    if (buffer_size < pkt_len + 1) {
+    if (buffer_size < pkt_len) {
         E("ERROR: %s", strerror(ENOBUFS));
         return -1;
     }

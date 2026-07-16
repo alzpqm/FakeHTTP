@@ -101,7 +101,7 @@ invalid:
 }
 
 
-static int remove_tfo_cookie(uint16_t ethertype, uint8_t *pkt,
+static int remove_tfo_cookie(uint16_t ethertype, uint8_t *pkt, int pkt_len,
                              struct tcphdr *tcph)
 {
     int not_found = 0;
@@ -140,7 +140,10 @@ static int remove_tfo_cookie(uint16_t ethertype, uint8_t *pkt,
         if (ethertype == ETHERTYPE_IP) {
             nfq_tcp_compute_checksum_ipv4(tcph, (struct iphdr *) pkt);
         } else if (ethertype == ETHERTYPE_IPV6) {
-            nfq_tcp_compute_checksum_ipv6(tcph, (struct ip6_hdr *) pkt);
+            if (fh_pkt6_update_tcp_checksum(pkt, pkt_len, tcph) < 0) {
+                E(T(fh_pkt6_update_tcp_checksum));
+                return -1;
+            }
         }
     }
 
@@ -351,7 +354,7 @@ int fh_rawsend_handle(struct sockaddr_ll *sll, uint8_t *pkt_data, int pkt_len,
             return -1;
         }
     } else {
-        E("ERROR: unknown ethertype 0x%04x");
+        E("ERROR: unknown ethertype 0x%04x", ethertype);
         return -1;
     }
 
@@ -411,7 +414,8 @@ int fh_rawsend_handle(struct sockaddr_ll *sll, uint8_t *pkt_data, int pkt_len,
         */
         sll->sll_pkttype = 0;
 
-        srcinfo_unavail = fh_srcinfo_get(daddr, &src_ttl, sll->sll_addr);
+        srcinfo_unavail =
+            fh_srcinfo_get(daddr, &src_ttl, sll->sll_addr, &sll->sll_halen);
 
         if (!g_ctx.inbound || srcinfo_unavail) {
             E_INFO("%s:%u <===SYN-ACK(~)=== %s:%u", dst_ip_str,
@@ -488,7 +492,12 @@ int fh_rawsend_handle(struct sockaddr_ll *sll, uint8_t *pkt_data, int pkt_len,
             return NF_ACCEPT;
         }
 
-        *modified = !remove_tfo_cookie(ethertype, pkt_data, tcph);
+        res = remove_tfo_cookie(ethertype, pkt_data, pkt_len, tcph);
+        if (res < 0) {
+            E(T(remove_tfo_cookie));
+            return -1;
+        }
+        *modified = !res;
         if (*modified) {
             E_INFO("%s:%u ===SYN(#)===> %s:%u", src_ip_str,
                    ntohs(tcph->source), dst_ip_str, ntohs(tcph->dest));
@@ -497,7 +506,7 @@ int fh_rawsend_handle(struct sockaddr_ll *sll, uint8_t *pkt_data, int pkt_len,
                    dst_ip_str, ntohs(tcph->dest));
         }
 
-        res = fh_srcinfo_put(saddr, src_ttl, sll->sll_addr);
+        res = fh_srcinfo_put(saddr, src_ttl, sll->sll_addr, sll->sll_halen);
         if (res < 0) {
             E(T(fh_srcinfo_put));
             return -1;
@@ -516,7 +525,12 @@ int fh_rawsend_handle(struct sockaddr_ll *sll, uint8_t *pkt_data, int pkt_len,
             return NF_ACCEPT;
         }
 
-        *modified = !remove_tfo_cookie(ethertype, pkt_data, tcph);
+        res = remove_tfo_cookie(ethertype, pkt_data, pkt_len, tcph);
+        if (res < 0) {
+            E(T(remove_tfo_cookie));
+            return -1;
+        }
+        *modified = !res;
         if (*modified) {
             E_INFO("%s:%u <===SYN(#)=== %s:%u", dst_ip_str, ntohs(tcph->dest),
                    src_ip_str, ntohs(tcph->source));
