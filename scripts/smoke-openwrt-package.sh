@@ -21,6 +21,8 @@ sh -n "$ROOT/usr/sbin/fakehttp-setup"
 
 grep -q "Package/fakehttp" openwrt/fakehttp/Makefile
 grep -q "Package/luci-app-fakehttp" openwrt/luci-app-fakehttp/Makefile
+grep -q "/etc/init.d/fakehttp restart" openwrt/fakehttp/Makefile
+grep -q 'remove|deinstall|uninstall)' openwrt/fakehttp/Makefile
 grep -q "config globals 'globals'" "$ROOT/etc/config/fakehttp"
 grep -q "fakehttp-setup" openwrt/README.md
 
