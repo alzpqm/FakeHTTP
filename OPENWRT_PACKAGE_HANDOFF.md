@@ -267,3 +267,31 @@ Upgrade backups from the final package work:
 
 The second backup is the one taken immediately before upgrading to
 `fakehttp-99.2-r2`.
+
+## Formal Release Validation On 2026-07-16
+
+- The router ran `fakehttp-99.2-r2` continuously for about 9 days before the
+  release upgrade, with roughly 12.37 million NFQUEUE 512 packets observed and
+  zero kernel/user queue drops.
+- The formal package is `fakehttp-99.2-r5`; the LuCI package remains
+  `luci-app-fakehttp-99.2-r2` because its contents did not change.
+- The APK package has both `post-install` and `post-upgrade` hooks. The latter
+  is required by OpenWrt 25.12 APK upgrades and enables then restarts the
+  service after an upgrade.
+- The r4-to-r5 upgrade changed the running PID from `6495` to `7917`
+  automatically, proving that the new executable was loaded without a manual
+  restart.
+- The active UCI configuration sha256 remained
+  `6be2e6d257024198d2dd867d3c466e2456b953fb2b9fb7755d61c2be44214e8b`
+  across the upgrade. The service remained boot-enabled and running in silent
+  mode on all three configured PPPoE exits.
+- Forced-interface HTTP checks through `pppoe-wan2`, `pppoe-wancm`, and
+  `pppoe-wanct` all completed successfully after the upgrade. NFQUEUE 512
+  remained active with zero kernel/user drops, and the error scans were empty.
+- Release artifact checksums:
+  - `fakehttp-99.2-r5.apk`:
+    `4b115deb5442401578778e18e9c43cb9ae8f52e284e74685c35963ba600f72f2`
+  - `luci-app-fakehttp-99.2-r2.apk`:
+    `9bddf64c1bfee9c109a3ddafdfc0dd45534a510acd650ba4f20efc82fe3cfc74`
+- The valid pre-upgrade router backup is:
+  `/root/fakehttp-release-backup-r4-to-r5-20260716-051738`.

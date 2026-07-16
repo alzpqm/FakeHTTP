@@ -12,6 +12,13 @@ fakehttp -h www.example.com -i eth0
 ```
 
 
+## OpenWrt
+
+An x86_64 package and LuCI control page are available in the
+[OpenWrt 99.2-r5 release](https://github.com/alzpqm/FakeHTTP/releases/tag/openwrt-99.2-r5).
+See [openwrt/README.md](openwrt/README.md) for installation and setup.
+
+
 ## Usage
 
 ```

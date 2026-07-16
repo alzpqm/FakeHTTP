@@ -3,6 +3,27 @@
 This directory contains OpenWrt package definitions, a procd service, UCI
 defaults, a LuCI web page, and a small setup helper for FakeHTTP.
 
+## Install the x86_64 release
+
+These prebuilt APK packages target OpenWrt 25.12 x86_64. On the router, run:
+
+```sh
+cd /tmp
+wget https://github.com/alzpqm/FakeHTTP/releases/download/openwrt-99.2-r5/fakehttp-99.2-r5.apk
+wget https://github.com/alzpqm/FakeHTTP/releases/download/openwrt-99.2-r5/luci-app-fakehttp-99.2-r2.apk
+apk add --allow-untrusted ./fakehttp-99.2-r5.apk ./luci-app-fakehttp-99.2-r2.apk
+```
+
+Open `Services -> FakeHTTP` in LuCI to configure the service. For a quick
+command-line setup, replace the hostname and network name as needed:
+
+```sh
+fakehttp-setup www.example.com wan
+```
+
+Upgrades preserve `/etc/config/fakehttp`, keep the boot service enabled, and
+restart FakeHTTP automatically when the configured service is enabled.
+
 ## Build a package with the OpenWrt SDK
 
 From an OpenWrt SDK checkout:
