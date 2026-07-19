@@ -21,6 +21,7 @@
 #include "nfqueue.h"
 
 #include <errno.h>
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,6 +44,25 @@
 static int fd = -1;
 static struct nfq_handle *h = NULL;
 static struct nfq_q_handle *qh = NULL;
+
+static int set_verdict(struct nfq_q_handle *queue, uint32_t pkt_id,
+                       int verdict, uint32_t data_len,
+                       const unsigned char *data)
+{
+    int res, err;
+
+    errno = 0;
+    res = nfq_set_verdict(queue, pkt_id, verdict, data_len, data);
+    if (res < 0) {
+        err = errno;
+        EE("ERROR: nfq_set_verdict(): packet=%" PRIu32 ", verdict=%d: %s",
+           pkt_id, verdict, err ? strerror(err) : "failure");
+        errno = err;
+    }
+
+    return res;
+}
+
 
 static int callback(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
                     struct nfq_data *nfa, void *data)
@@ -114,13 +134,13 @@ static int callback(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
     }
 
     if (modified && verdict != NF_DROP) {
-        return nfq_set_verdict(qh, pkt_id, verdict, pkt_len, pkt_data);
+        return set_verdict(qh, pkt_id, verdict, pkt_len, pkt_data);
     }
 
-    return nfq_set_verdict(qh, pkt_id, verdict, 0, NULL);
+    return set_verdict(qh, pkt_id, verdict, 0, NULL);
 
 ret_accept:
-    return nfq_set_verdict(qh, pkt_id, NF_ACCEPT, 0, NULL);
+    return set_verdict(qh, pkt_id, NF_ACCEPT, 0, NULL);
 }
 
 

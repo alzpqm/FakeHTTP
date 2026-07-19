@@ -50,9 +50,9 @@ static int pkt6_total_len(struct ip6_hdr *ip6h, int pkt_len, size_t *total_len)
 }
 
 
-static int pkt6_find_tcp(void *pkt_data, int pkt_len, struct ip6_hdr **ip6h_ptr,
-                         struct tcphdr **tcph_ptr, size_t *tcp_offset,
-                         size_t *tcp_len)
+static int pkt6_find_tcp(void *pkt_data, int pkt_len,
+                         struct ip6_hdr **ip6h_ptr, struct tcphdr **tcph_ptr,
+                         size_t *tcp_offset, size_t *tcp_len)
 {
     struct ip6_hdr *ip6h;
     struct ip6_ext *exth;
@@ -219,8 +219,8 @@ int fh_pkt6_parse(void *pkt_data, int pkt_len, struct sockaddr *saddr,
     saddr_in6 = (struct sockaddr_in6 *) saddr;
     daddr_in6 = (struct sockaddr_in6 *) daddr;
 
-    if (pkt6_find_tcp(pkt_data, pkt_len, &ip6h, &tcph, &tcp_offset,
-                      &tcp_len) < 0) {
+    if (pkt6_find_tcp(pkt_data, pkt_len, &ip6h, &tcph, &tcp_offset, &tcp_len) <
+        0) {
         E(T(pkt6_find_tcp));
         return -1;
     }

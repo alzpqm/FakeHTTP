@@ -20,6 +20,7 @@
 #define _GNU_SOURCE
 #include "mainfun.h"
 
+#include <ctype.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
@@ -89,6 +90,29 @@ static void print_usage(const char *name)
         "FakeHTTP version " VERSION "\n";
 
     fprintf(stderr, usage_fmt, name);
+}
+
+
+static int parse_ull_arg(const char *value, unsigned long long min,
+                         unsigned long long max, unsigned long long *result)
+{
+    char *end;
+    unsigned long long parsed;
+
+    if (!value || !value[0] || value[0] == '-' ||
+        isspace((unsigned char) value[0])) {
+        return -1;
+    }
+
+    errno = 0;
+    end = NULL;
+    parsed = strtoull(value, &end, 0);
+    if (errno || end == value || *end || parsed < min || parsed > max) {
+        return -1;
+    }
+
+    *result = parsed;
+    return 0;
 }
 
 
@@ -199,7 +223,7 @@ int main(int argc, char *argv[])
                 iface_cnt++;
                 if (iface_cnt >= iface_cap - 1) {
                     iface_new = realloc(g_ctx.iface,
-                                         2 * iface_cap * sizeof(*g_ctx.iface));
+                                        2 * iface_cap * sizeof(*g_ctx.iface));
                     if (!iface_new) {
                         fprintf(stderr, "%s: realloc(): %s.\n", argv[0],
                                 strerror(errno));
@@ -233,8 +257,7 @@ int main(int argc, char *argv[])
                 break;
 
             case 'm':
-                tmp = strtoull(optarg, NULL, 0);
-                if (!tmp || tmp > UINT32_MAX) {
+                if (parse_ull_arg(optarg, 1, UINT32_MAX, &tmp) < 0) {
                     fprintf(stderr, "%s: invalid value for -m.\n", argv[0]);
                     print_usage(argv[0]);
                     goto free_mem;
@@ -243,8 +266,7 @@ int main(int argc, char *argv[])
                 break;
 
             case 'n':
-                tmp = strtoull(optarg, NULL, 0);
-                if (!tmp || tmp > UINT32_MAX) {
+                if (parse_ull_arg(optarg, 1, UINT16_MAX, &tmp) < 0) {
                     fprintf(stderr, "%s: invalid value for -n.\n", argv[0]);
                     print_usage(argv[0]);
                     goto free_mem;
@@ -253,8 +275,7 @@ int main(int argc, char *argv[])
                 break;
 
             case 'r':
-                tmp = strtoull(optarg, NULL, 0);
-                if (!tmp || tmp > 10) {
+                if (parse_ull_arg(optarg, 1, 10, &tmp) < 0) {
                     fprintf(stderr, "%s: invalid value for -r.\n", argv[0]);
                     print_usage(argv[0]);
                     goto free_mem;
@@ -267,8 +288,7 @@ int main(int argc, char *argv[])
                 break;
 
             case 't':
-                tmp = strtoull(optarg, NULL, 0);
-                if (!tmp || tmp > UINT8_MAX) {
+                if (parse_ull_arg(optarg, 1, UINT8_MAX, &tmp) < 0) {
                     fprintf(stderr, "%s: invalid value for -t.\n", argv[0]);
                     print_usage(argv[0]);
                     goto free_mem;
@@ -287,8 +307,7 @@ int main(int argc, char *argv[])
                 break;
 
             case 'x':
-                tmp = strtoull(optarg, NULL, 0);
-                if (!tmp || tmp > UINT32_MAX) {
+                if (parse_ull_arg(optarg, 1, UINT32_MAX, &tmp) < 0) {
                     fprintf(stderr, "%s: invalid value for -x.\n", argv[0]);
                     print_usage(argv[0]);
                     goto free_mem;
@@ -297,8 +316,7 @@ int main(int argc, char *argv[])
                 break;
 
             case 'y':
-                tmp = strtoull(optarg, NULL, 0);
-                if (!tmp || tmp >= 100) {
+                if (parse_ull_arg(optarg, 1, 99, &tmp) < 0) {
                     fprintf(stderr, "%s: invalid value for -y.\n", argv[0]);
                     print_usage(argv[0]);
                     goto free_mem;

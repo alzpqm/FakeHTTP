@@ -36,6 +36,9 @@ all: $(FAKEHTTP)
 debug:
 	$(MAKE) DEBUG=1
 
+test: all
+	scripts/test-cli-validation.sh $(FAKEHTTP)
+
 clean:
 	$(RM) -r $(BUILDDIR)
 
@@ -61,7 +64,7 @@ install: all
 uninstall:
 	$(RM) $(DESTDIR)$(BINDIR)/fakehttp
 
-.PHONY: all debug clean install uninstall
+.PHONY: all debug test clean install uninstall
 
 ifneq ($(MAKECMDGOALS),clean)
 -include $(OBJS:.o=.d)

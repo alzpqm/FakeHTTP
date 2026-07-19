@@ -107,7 +107,8 @@ static struct payload_node *current_node;
 
 static int make_http_get(uint8_t *buffer, size_t *len, char *hostname)
 {
-    int len_, buffsize;
+    int len_;
+    size_t buffsize;
 
     buffsize = *len;
     len_ = snprintf((char *) buffer, buffsize, http_fmt, hostname);
@@ -115,7 +116,7 @@ static int make_http_get(uint8_t *buffer, size_t *len, char *hostname)
     if (len_ < 0) {
         E("ERROR: snprintf(): %s", "failure");
         return -1;
-    } else if (len_ >= buffsize) {
+    } else if ((size_t) len_ >= buffsize) {
         E("ERROR: hostname is too long");
         return -1;
     }
@@ -128,15 +129,14 @@ static int make_http_get(uint8_t *buffer, size_t *len, char *hostname)
 
 static int make_tls_client_hello(uint8_t *buffer, size_t *len, char *hostname)
 {
-    int padding_len;
-    size_t i, buffsize;
+    size_t i, buffsize, hostname_len, padding_len, sni_overhead;
     struct tls_client_hello *tls_data;
     struct tls_ext_server_name_head *server_name_head;
     struct tls_ext_padding_head *padding_head;
 
     buffsize = *len;
 
-    if (buffsize < (int) sizeof(*tls_data)) {
+    if (buffsize < sizeof(*tls_data)) {
         E("ERROR: buffer is too small");
         return -1;
     }
@@ -152,16 +152,14 @@ static int make_tls_client_hello(uint8_t *buffer, size_t *len, char *hostname)
         tls_data->session_id[i] = rand();
     }
 
-    size_t hostname_len = strlen(hostname);
+    hostname_len = strlen(hostname);
+    sni_overhead = sizeof(*server_name_head) + sizeof(*padding_head);
 
-    padding_len = sizeof(tls_data->data_sni) -
-                  sizeof(struct tls_ext_server_name_head) - strlen(hostname) -
-                  sizeof(struct tls_ext_padding_head);
-
-    if (padding_len < 0) {
+    if (hostname_len > sizeof(tls_data->data_sni) - sni_overhead) {
         E("ERROR: hostname is too long");
         return -1;
     }
+    padding_len = sizeof(tls_data->data_sni) - sni_overhead - hostname_len;
 
     server_name_head = (struct tls_ext_server_name_head *) tls_data->data_sni;
     SET_BE16(server_name_head->type, 0);

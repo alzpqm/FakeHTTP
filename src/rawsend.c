@@ -414,8 +414,8 @@ int fh_rawsend_handle(struct sockaddr_ll *sll, uint8_t *pkt_data, int pkt_len,
         */
         sll->sll_pkttype = 0;
 
-        srcinfo_unavail =
-            fh_srcinfo_get(daddr, &src_ttl, sll->sll_addr, &sll->sll_halen);
+        srcinfo_unavail = fh_srcinfo_get(daddr, &src_ttl, sll->sll_addr,
+                                         &sll->sll_halen);
 
         if (!g_ctx.inbound || srcinfo_unavail) {
             E_INFO("%s:%u <===SYN-ACK(~)=== %s:%u", dst_ip_str,

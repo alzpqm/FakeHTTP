@@ -36,6 +36,17 @@ findings survive outside the chat context.
   access.
 - `src/nfqueue.c`: if `SO_RCVBUFFORCE` is rejected while increasing the NFQUEUE
   receive buffer, fall back to `SO_RCVBUF` instead of failing startup outright.
+- `src/mainfun.c`: strictly validate all numeric command-line values, including
+  overflow, trailing characters, leading whitespace, negative wraparound, and
+  per-option ranges. NFQUEUE numbers are now limited to the API's 16-bit range.
+- `src/signals.c`: strictly validate numeric `/proc` directory names before
+  treating them as PIDs, and use a small fixed buffer for `/proc/<pid>/exe`.
+- `src/nfqueue.c`: log packet ID, verdict, and the system error when
+  `nfq_set_verdict()` fails.
+- `src/payload.c`: use `size_t` for the `snprintf()` destination size and avoid
+  calculating the hostname length twice. Validate the TLS SNI hostname length
+  before subtracting unsigned sizes, preventing an underflow and out-of-bounds
+  padding write for hostnames longer than 262 bytes.
 
 ## Verified
 
@@ -65,11 +76,19 @@ Validation was run on Debian `192.168.9.190` using the synced worktree in
   - r3 sha256:
     `a353e9f909b4a48c0dec819b94539c8755fbb3357a14ef4203685b89d9aa49ba`
 
-## Findings intentionally not fixed yet
+## Reviewed without a code change
 
-- `src/nfqueue.c` returns `nfq_set_verdict()` directly. If that syscall fails,
-  there is no second recovery path. This is worth documenting or logging, but a
-  robust retry/fallback strategy needs careful NFQUEUE behavior testing.
+- The cast from `uint8_t *` to `char *` in `payload.c` is required by the
+  `snprintf()` interface. Removing it would introduce an incompatible-pointer
+  warning without improving safety.
+- `__attribute__((aligned))` without an explicit value in `rawsend.c` is valid
+  GCC syntax and requests the maximum useful alignment for the target. The
+  packet buffer does not require a specific protocol alignment value.
+- The remaining `PATH_MAX` buffers in `signals.c` hold executable paths returned
+  by `readlink()`. Keeping them avoids truncating valid paths; only the short
+  `/proc/<pid>/exe` path buffer was reduced.
+- C99 mid-function declarations are valid for this project. The hostname length
+  declaration was moved to the function's declaration block for readability.
 
 ## False positive checked
 
