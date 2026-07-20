@@ -223,3 +223,31 @@ hardening binary was deployed.
   - Each selected PPPoE interface capture saw fake payload strings before the
     real `Host: example.com` request and reported zero tcpdump kernel drops.
   - Temporary nft and pcap/log files were removed after verification.
+
+## 2026-07-21 download slowdown audit
+
+Only FakeHTTP was inspected and changed during this audit. FakeSIP was left to
+the separate task and was not stopped, reconfigured, or inspected.
+
+- The installed `fakehttp-99.2-r5` process had been running since the router's
+  previous boot, used about 896 KiB RSS, one thread, and five file descriptors.
+- NFQUEUE 512 had processed about 5.9 million packets with zero queued packets,
+  zero kernel drops, and zero userspace drops. The three configured PPPoE
+  interfaces also reported zero RX/TX drops.
+- Silent mode explained the empty normal runtime log. A controlled 60-second
+  non-silent run recorded 3,966 lines and 810 `FAKE(*)` events with no error,
+  warning, or verdict-failure lines. This indicated high TCP connection churn
+  rather than CPU, memory, or NFQUEUE saturation.
+- A short 2 MB download A/B test from Debian showed a repeatable latency and
+  throughput penalty with the compiled default `repeat=2`. Initial enabled
+  runs took about 6.2-6.6 seconds, while FakeHTTP-disabled runs took about
+  0.4-2.0 seconds. A second enabled set remained slower but showed normal WAN
+  variance at about 2.0-4.4 seconds.
+- A candidate using `repeat=1` completed five runs in about 0.4-2.1 seconds.
+  The same setting applied through the production UCI/procd service completed
+  five more runs in about 0.5-2.3 seconds.
+- Production was therefore left on `fakehttp.advanced.repeat='1'`. The service
+  remained in silent mode with the same three interfaces and six HTTP/HTTPS
+  payload entries. Final NFQUEUE and interface drop counters remained zero.
+- All temporary diagnostic logs, PID files, and configuration snapshots were
+  removed after the service was restored.
