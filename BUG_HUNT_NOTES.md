@@ -251,3 +251,36 @@ the separate task and was not stopped, reconfigured, or inspected.
   payload entries. Final NFQUEUE and interface drop counters remained zero.
 - All temporary diagnostic logs, PID files, and configuration snapshots were
   removed after the service was restored.
+
+## 2026-07-24 connection-count audit
+
+Only FakeHTTP and NFQUEUE 512 were inspected or changed. FakeSIP was left to its
+separate task and was not inspected, stopped, or reconfigured.
+
+- FakeHTTP still had one process, about 896 KiB RSS, one thread, and five file
+  descriptors. Its two socket descriptors were queue/raw sockets, not TCP
+  connections.
+- The conntrack table initially held about 1,907 of 262,144 entries (0.73%).
+  A 60-second sample ranged from 1,127 to 1,689 entries and averaged 1,408,
+  proving entries were being reclaimed rather than accumulating.
+- During that sample NFQUEUE 512 processed about 18 packets per second, consumed
+  about 0.02 CPU seconds, and retained zero queue, kernel-drop, and user-drop
+  counters. There were no conntrack-full, OOM, segfault, or NFQUEUE warnings.
+- The largest concentration was TCP traffic to `109.244.79.186:23507`.
+  `netstat` attributed the live sockets to the `clash` process, not FakeHTTP.
+  FakeHTTP can nevertheless influence their lifetime by injecting its fake
+  payload into each new proxy connection.
+- Thirty-second A/B/A churn samples counted unique original source ports for
+  that endpoint:
+  - FakeHTTP active: 242 ports, 186 average entries.
+  - FakeHTTP inactive: 179 ports, 154 average entries.
+  - FakeHTTP active again: 288 ports, 198 average entries.
+  This indicates FakeHTTP amplified the proxy connection churn by roughly
+  20-60% during the sample, but did not originate the connections.
+- A temporary endpoint bypass while FakeHTTP remained active reduced the sample
+  to 204 unique ports and 181 average entries. It was not retained because
+  bypassing the proxy endpoint would also remove the intended obfuscation from
+  that traffic.
+- Production was restored to `fakehttp-99.2-r5`, silent mode, `repeat=1`, the
+  same three PPPoE exits, and the same six payload entries. Temporary nft rules
+  and sample files were removed.
