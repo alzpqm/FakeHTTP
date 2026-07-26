@@ -284,3 +284,119 @@ separate task and was not inspected, stopped, or reconfigured.
 - Production was restored to `fakehttp-99.2-r5`, silent mode, `repeat=1`, the
   same three PPPoE exits, and the same six payload entries. Temporary nft rules
   and sample files were removed.
+
+## 2026-07-26 coordinated USTC throughput audit
+
+Only FakeHTTP and NFQUEUE 512 were inspected or changed. The separate FakeSIP
+task supplied a stable window; queue 513 and all FakeSIP state were not read,
+stopped, or reconfigured. Tests ran from the wired Debian VM (`192.168.9.190`),
+fixed to `pppoe-wancm` and public source `183.228.195.226`, against USTC's
+LibreSpeed backend. Each run used the site's six download and three upload
+streams for four seconds. Mac Wi-Fi measurements were excluded.
+
+- Results collected while either task was restarting its queue were discarded.
+- A controlled non-silent run measured 54.72 Mbps down and 180.88 Mbps up. Its
+  719 log lines contained 133 normal `FAKE(*)` events and no errors, warnings,
+  verdict failures, or NFQUEUE drops.
+- Valid FakeHTTP-on runs measured 56.48, 76.45, and 54.09 Mbps down (56.48
+  median), with 179.93, 180.46, and 180.33 Mbps up (180.33 median).
+- Valid FakeHTTP-off runs measured 54.56, 62.32, and 52.77 Mbps down (54.56
+  median), with 183.47, 180.46, and 180.06 Mbps up (180.46 median). This clean
+  A/B pair did not reproduce a FakeHTTP download penalty.
+- A lower TTL candidate (`ttl=1`) reduced median download throughput to 49.61
+  Mbps and was rejected.
+- Reducing the optional early-ACK nft rule from conntrack packets 2-4 to only
+  packet 2 produced a 53.86 Mbps download median. Removing that optional rule
+  entirely produced a 53.58 Mbps median. Neither candidate improved throughput,
+  so both were rejected rather than committed.
+- Production was restored to the released `fakehttp-99.2-r5` behavior with
+  silent mode, `repeat=1`, default TTL 3, three PPPoE exits, and the original
+  early-ACK rule. NFQUEUE 512 had zero backlog, kernel drops, and userspace
+  drops. The fixed-WAN test rule and all Debian test files were removed.
+
+The audit was then extended to compare all three carriers and payload choices.
+The first fixed-file pass was discarded because `curl` had not forced IPv4;
+the Debian VM has global IPv6 addresses, so those requests could bypass the
+IPv4 source-mark rule. All replacement commands used `curl -4` and recorded
+the resolved remote IPv4 address.
+
+- USTC's LibreSpeed service and mirror began rejecting rapid automated
+  requests after the initial tests. This matches the site's documented
+  temporary blocking policy, so throttled and zero-byte USTC samples were not
+  used for the final carrier or service comparison.
+- The replacement endpoint was TUNA's Debian 13.6.0 netinst ISO. Every valid
+  run fetched the same 64 MiB range from `101.6.15.130` over HTTP/1.1. With
+  FakeHTTP enabled, six-run medians were 444.38 Mbps on `pppoe-wancm`, 409.34
+  Mbps on `pppoe-wanct`, and 311.75 Mbps on `pppoe-wan2`. This also showed that
+  `wancm` was not generally download-limited: its earlier poor USTC result was
+  destination/path specific.
+- On the fastest TUNA path (`pppoe-wancm`), FakeHTTP ON/OFF/ON medians were
+  444.38, 457.94, and 446.65 Mbps. The combined 12-run ON median was 445.70
+  Mbps, only 2.7% below the OFF median and well within sample variance.
+- A second ON/OFF/ON comparison on `pppoe-wanct` measured 409.34, 377.40, and
+  437.21 Mbps. Its combined ON median was 433.03 Mbps. The opposite direction
+  of the small differences on the two exits further indicates normal path
+  variance rather than a FakeHTTP download penalty.
+- A coordinated both-programs-off baseline on `pppoe-wancm` measured 316.57,
+  483.35, 485.08, 454.62, 445.58, and 487.82 Mbps (468.99 median). Both
+  programs enabled measured roughly 445-449 Mbps in the adjacent controlled
+  runs. The approximately 4-5% difference is small relative to the observed
+  203-489 Mbps path variance and rules out either program as the source of a
+  large download cap, although it does not prove zero combined overhead.
+- The existing payload hosts still resolve consistently through AliDNS and
+  DNSPod. `cgw.mil.cn` and `download.mail.mil.cn` returned valid HTTP and HTTPS
+  responses; `yun.cgw.mil.cn` had HTTPS active while port 80 was closed. All
+  three presented matching, currently valid TLS certificates.
+- A diagnostic payload set using `test.ustc.edu.cn` and
+  `mirrors.ustc.edu.cn` for HTTP and HTTPS produced a 410.64 Mbps median on
+  `pppoe-wanct`, below the 433.03 Mbps median of the existing payload set. It
+  was rejected and the byte-identical production UCI backup was restored.
+- `www.gov.cn` and `www.12306.cn` were verified as active official-domain
+  fallbacks with matching DNS, HTTP, HTTPS, and TLS identity, but were not
+  deployed. No candidate demonstrated a throughput benefit over the existing
+  payloads.
+- Production ended on the original six payload entries, silent mode,
+  `repeat=1`, default TTL 3, and all three PPPoE exits. NFQUEUE 512 again had
+  zero backlog and zero kernel/userspace drops. All temporary source marks,
+  UCI backups, and Debian test files were removed.
+
+## 2026-07-26 China Speed Test endpoint audit
+
+The locally cached server list and runtime log from China Speed Test 4.4.9 were
+used to verify the protocol before any payload test. Client identifiers and
+one-time validation values in the log were not copied into the project notes.
+
+- The control services `dlcv2.cnspeedtest.cn:8443`,
+  `dlcv64.cnspeedtest.cn:8443`, and `down.cnspeedtest.cn:8043` all returned
+  HTTP 200 with valid TLS. Their standard HTTPS port 443 was not active.
+  `down.cnspeedtest.cn` resolved to the Shenzhen Unicom speed-server address
+  `112.90.72.190`, but the app used direct IP addresses for speed traffic.
+- The actual speed protocol is HTTP on port 65499. It first calls
+  `/speed/dovalid`, then opens eight connections to `/speed/File(1G).dl`, and
+  uses `/speed/doAnalsLoad.do` for upload. A valid one-time key is required for
+  the download path.
+- A low-volume matrix covered all supplied Shanghai, Beijing, Tianjin,
+  Chongqing, and Shenzhen Telecom, Unicom, and Mobile nodes, plus the two
+  Education Network nodes. All 17 port-65499 nodes returned the same protocol
+  behavior: an invalid validation request produced HTTP 200 with a three-byte
+  rejection, and an invalid file request produced HTTP 403 with a 134-byte
+  body. The two additional Shenzhen Mobile port-9443 entries timed out.
+- Chongqing was the lowest-latency group from the Debian VM: Telecom, Unicom,
+  and Mobile completed the probes in about 15-22 ms, versus roughly 66-148 ms
+  for the other tested cities. One node from each Chongqing carrier was
+  therefore selected instead of adding the complete server list.
+- The temporary candidate payload set used HTTP Host values
+  `222.181.15.28:65499`, `113.204.250.254:65499`, and
+  `218.201.1.249:65499`. On fixed `pppoe-wancm`, the production/candidate/
+  production six-run medians were 447.14, 457.21, and 441.26 Mbps. Combining
+  the two production blocks gave 447.14 Mbps, so the candidate's 2.25% lead
+  was within path variance and did not establish a throughput benefit.
+- The candidate also had an important semantic limitation: FakeHTTP's normal
+  Host template emits `GET /` on the real connection's destination port,
+  whereas the app uses port 65499, a `/speed/...` path, and a valid one-time
+  key. The three-node candidate was rejected rather than promoted.
+- The byte-identical production UCI backup was restored. The temporary source
+  mark and backup were deleted, and FakeHTTP ended on the released r5 binary,
+  the original six HTTP/HTTPS payloads, silent mode, `repeat=1`, TTL 3, and all
+  three PPPoE exits. NFQUEUE 512 again had zero backlog, kernel drops, and
+  userspace drops.
