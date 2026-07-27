@@ -400,3 +400,41 @@ one-time validation values in the log were not copied into the project notes.
   the original six HTTP/HTTPS payloads, silent mode, `repeat=1`, TTL 3, and all
   three PPPoE exits. NFQUEUE 512 again had zero backlog, kernel drops, and
   userspace drops.
+
+## 2026-07-27 bidirectional payload and carrier audit
+
+The wired Debian VM was fixed to one IPv4 carrier at a time. A fixed mainland
+Ookla server (`24447`, Shanghai Unicom) measured download and upload together;
+the TUNA Debian 13.6.0 ISO provided a separate 64 MiB high-bandwidth download
+check. FakeSIP supplied a stable window and queue 513 was not inspected or
+changed.
+
+- The three China Speed Test control hosts produced about 118 Mbps download and
+  192 Mbps upload on `pppoe-wancm`, below the 136/192 Mbps FakeHTTP-off
+  reference. They were rejected. Their app-specific ports and request protocol
+  remain a semantic mismatch for FakeHTTP's generic templates.
+- `cloud.189.cn`, `yun.139.com`, and `pan.wo.cn` were tested together and then
+  separately as HTTP and HTTPS payloads. The individual two-run medians were
+  about 136, 133, and 134 Mbps download respectively, while upload remained
+  about 192 Mbps. None established a bidirectional improvement over the off
+  reference.
+- An adjacent production/cloud.189.cn/production sequence was inconsistent:
+  its download medians were about 97, 135, and 140 Mbps, with upload fixed near
+  192 Mbps throughout. The result suggests substantial path variance rather
+  than a repeatable whitelist effect.
+- TUNA cross-checks on `pppoe-wancm` measured production/cloud.189.cn/off
+  medians of about 81/61/74 Mbps. The candidate was worse than both production
+  and off. The current low TUNA rate therefore cannot be repaired by that
+  payload replacement and is primarily destination/path dependent.
+- Carrier comparison found `pppoe-wanct` strongly asymmetric: the Shanghai
+  server measured about 553 Mbps down but only 46 Mbps up. `pppoe-wan2` was the
+  best balanced path in this window, repeating about 164 Mbps down and 192 Mbps
+  up, while its TUNA samples were about 100-121 Mbps. `cloud.189.cn` on wan2
+  left the paired test near 162-164/192 Mbps and reduced TUNA to 90-97 Mbps, so
+  it was also rejected there.
+- No candidate was promoted. The byte-identical production config (SHA-256
+  `ce2442350bb96c5896025fb7081a4a85465624beae2f1b1cabbee27dd55a7c6c`)
+  was restored with silent mode and the original six payload entries. The
+  temporary nft source mark and Debian hosts override were removed. Queue 512
+  ended with zero backlog and zero kernel/userspace drops, and the filtered
+  runtime log had no anomalies.
