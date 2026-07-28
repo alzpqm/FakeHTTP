@@ -438,3 +438,48 @@ changed.
   temporary nft source mark and Debian hosts override were removed. Queue 512
   ended with zero backlog and zero kernel/userspace drops, and the filtered
   runtime log had no anomalies.
+
+## 2026-07-29 SpeedTest.cn host lineage and three-carrier audit
+
+The live OpenWrt config and every retained config backup, including the oldest
+2026-07-05 copy, showed that the project's historical HTTP and HTTPS default was
+`node-36-250-1-90.speedtest.cn`. The upstream README's `www.example.com` value
+is only a placeholder and must not be treated as this deployment's original
+payload. The historical host remained disabled alongside `cgw.net.cn`,
+`www.12339.gov.cn`, and `dlcv2.cnspeedtest.cn`; production still used the six
+`cgw.mil.cn`, `download.mail.mil.cn`, and `yun.cgw.mil.cn` HTTP/HTTPS entries.
+
+Tests ran from the wired Debian VM with one IPv4 exit selected at a time. A
+fixed 64 MiB TUNA range tested download throughput. The SpeedTest.cn website's
+current encrypted node API was decoded using the public client-side routine,
+which showed that current nodes use direct `IP:51090` URLs for `/hello`,
+`/download`, and `/upload`. An active Xi'an Mobile node also resolved through
+the current synthetic hostname `node-111-20-163-124.speedtest.cn` and was
+reachable through all three exits.
+
+- The historical `node-36-250-1-90.speedtest.cn` name still resolved to
+  `36.250.1.90`, but both TCP 80 and 443 timed out. As the sole HTTP/HTTPS
+  payload, its two-run TUNA medians were about 395, 394, and 373 Mbps on
+  `pppoe-wanct`, `pppoe-wan2`, and `pppoe-wancm`. Paired Ookla results remained
+  near the established carrier behavior. It was rejected as an inactive legacy
+  endpoint with no common-carrier benefit.
+- The current active `node-111-20-163-124.speedtest.cn` candidate produced
+  two-run TUNA medians of about 419, 399, and 399 Mbps on wanct, wan2, and wancm.
+  It did not improve all three exits. The node API also marks this node as HTTP
+  only, so using the same name as a TLS SNI payload would not match the service's
+  real protocol.
+- The live central service `nodes-api.speedtest.cn` was then tested as the sole
+  HTTP/HTTPS payload. Its two-run TUNA medians versus adjacent production were
+  about 440/394 Mbps on wanct, 498/463 Mbps on wan2, and 365/382 Mbps on wancm.
+  The mixed direction of the differences does not establish a shared whitelist.
+- A fixed 8 MiB POST to the active node's real `/upload` endpoint provided the
+  upload cross-check. Candidate/production medians were about 54/50 Mbps on
+  wanct, 78/79 Mbps on wan2, and 70/98 Mbps on wancm. The candidate did not
+  improve upload consistently and was materially worse on wancm.
+- None of the three SpeedTest.cn candidates was promoted. The byte-identical
+  production config was restored with SHA-256
+  `ce2442350bb96c5896025fb7081a4a85465624beae2f1b1cabbee27dd55a7c6c`.
+  FakeHTTP ended in silent mode on the original six payload entries, repeat 1,
+  and all three WAN interfaces. Queue 512 had zero backlog and zero kernel or
+  userspace drops; the temporary source mark, Debian hosts override, and remote
+  test backup were removed.
