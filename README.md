@@ -47,7 +47,7 @@ Advanced Options:
   -f                 skip firewall rules
   -g                 disable hop count estimation
   -m <mark>          fwmark for bypassing the queue
-  -n <number>        netfilter queue number
+  -n <number>        netfilter queue number (0-65535)
   -r <repeat>        duplicate generated packets for <repeat> times
   -t <ttl>           TTL for generated packets
   -x <mask>          set the mask for fwmark

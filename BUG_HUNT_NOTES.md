@@ -483,3 +483,64 @@ reachable through all three exits.
   and all three WAN interfaces. Queue 512 had zero backlog and zero kernel or
   userspace drops; the temporary source mark, Debian hosts override, and remote
   test backup were removed.
+
+## 2026-07-29 r6 core, package, and LuCI validation
+
+LocalAI/Ollama and LM Studio supplied adversarial review candidates; each
+accepted change was then checked against source control flow, unit tests, Linux
+sanitizers, package metadata, and the OpenWrt 25.12.5 router. Model output alone
+was not treated as evidence.
+
+- Core fixes reject IPv4 TCP data offsets below five, key cached source
+  metadata by interface index as well as address, accept exactly 1,200-byte
+  custom payloads while rejecting 1,201 bytes, preserve daemon logging when a
+  log path is configured, accept NFQUEUE number 0, and recognize a running
+  executable after atomic replacement produces a `/proc/*/exe` ` (deleted)`
+  suffix. Focused regression tests cover each boundary.
+- The LuCI service panel gained Start, Restart, and Stop controls with explicit
+  Running, Stopped, and Unavailable states. Actions use `fs.exec`, verify return
+  codes, poll the resulting service state, and no longer save or apply unrelated
+  pending LuCI changes before Restart.
+- ACL mutations moved from the read role to the write role. Payload validation
+  now permits an empty disabled row, requires an absolute binary path, rejects
+  non-ASCII/control/slash characters in enabled host payloads, and enforces the
+  backend hostname limit. Queue number 0 is accepted consistently by CLI,
+  procd, and LuCI.
+- The APK initially failed to install because `nftables-nojson` conflicts with
+  the router's required `nftables-json`. Depending on the `nftables` virtual
+  package fixed the conflict without replacing the active firewall stack.
+- `fakehttp-99.2-r6` and `luci-app-fakehttp-99.2-r3` were installed. Their
+  router SHA-256 values were respectively
+  `998891ee2cb799880bde9e846908d117a9198027f41413058d9be08d30fc02be`,
+  `e0d57edde2a4c8fd60f13f94a615eb04c1fc350c2fb80fc86b2154d310a52fc0`
+  for the LuCI view, and
+  `08b320a56a30113abe85fed802d7a248895eb2175b4a4f7cd955919e7fb2e5d3`
+  for its ACL.
+- Real LuCI testing confirmed correct button state and process/queue behavior
+  for Stop, Start, and Restart. A Unicode hostname that the prior character
+  count accepted was rejected by the new validator, and no UCI write occurred.
+- During a 900-second non-silent window, PID 13013 stayed unchanged. Queue 512
+  backlog, kernel drops, and userspace drops were zero in all 15 one-minute
+  samples; its sequence advanced from 9,172 to 19,067 between minute 1 and 15.
+  The window produced 13,825 FakeHTTP lines with zero anomaly matches, and the
+  related dmesg scan was empty.
+- RSS warmed by 36 KiB from 888 to 924 KiB, then remained fixed from minute 9
+  through minute 15. VmSize stayed 1,152 KiB, with no swap and no FD or thread
+  growth. This rejects a fast leak in the observed load but does not rule out a
+  very slow long-horizon leak.
+- Fifteen fixed TUNA 64 MiB downloads completed in full from `101.6.15.130`.
+  Median throughput was 210.98 Mbps, with an 86.86-328.43 Mbps range. The wide
+  path variance is not evidence for either a throughput improvement or a
+  regression.
+- Linux release and ASan/LeakSan/UBSan runs, GCC `-fanalyzer`, unit/CLI tests,
+  OpenWrt package smoke tests, LuCI and shell syntax, JSON parsing, and diff
+  whitespace checks all passed.
+- Final production state is r6/r3, silent mode, PID 30280, the original six
+  enabled payloads and three WAN interfaces, `repeat=1`, and byte-identical
+  config SHA-256
+  `ce2442350bb96c5896025fb7081a4a85465624beae2f1b1cabbee27dd55a7c6c`.
+  Queue 512 ended with zero backlog and zero kernel/userspace drops.
+
+Remaining non-blocking coverage gaps are a multi-hour or 24-hour RSS/FD trend
+and deliberate fault injection for NFQUEUE saturation, verdict/send failures,
+and interface disappearance/recreation.

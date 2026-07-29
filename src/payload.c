@@ -184,10 +184,10 @@ static int make_tls_client_hello(uint8_t *buffer, size_t *len, char *hostname)
 
 static int make_custom(uint8_t *buffer, size_t *len, char *filepath)
 {
-    int res, len_, buffsize;
+    int extra, res;
+    size_t len_, nread, buffsize;
     FILE *fp;
 
-    len_ = 0;
     buffsize = *len;
 
     fp = fopen(filepath, "rb");
@@ -196,8 +196,13 @@ static int make_custom(uint8_t *buffer, size_t *len, char *filepath)
         return -1;
     }
 
-    while (!feof(fp) && !ferror(fp) && len_ < buffsize) {
-        len_ += fread(buffer + len_, 1, buffsize - len_, fp);
+    len_ = 0;
+    while (len_ < buffsize) {
+        nread = fread(buffer + len_, 1, buffsize - len_, fp);
+        len_ += nread;
+        if (!nread || feof(fp) || ferror(fp)) {
+            break;
+        }
     }
 
     if (ferror(fp)) {
@@ -206,8 +211,19 @@ static int make_custom(uint8_t *buffer, size_t *len, char *filepath)
         return -1;
     }
 
-    if (!feof(fp)) {
-        E("ERROR: %s: Data too long. Maximum length is %d", filepath,
+    if (len_ == buffsize) {
+        extra = fgetc(fp);
+        if (ferror(fp)) {
+            E("ERROR: fgetc(): %s: %s", filepath, "failure");
+            fclose(fp);
+            return -1;
+        }
+    } else {
+        extra = EOF;
+    }
+
+    if (extra != EOF) {
+        E("ERROR: %s: Data too long. Maximum length is %zu", filepath,
           buffsize);
         fclose(fp);
         return -1;

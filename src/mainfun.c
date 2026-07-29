@@ -79,7 +79,7 @@ static void print_usage(const char *name)
         "  -f                 skip firewall rules\n"
         "  -g                 disable hop count estimation\n"
         "  -m <mark>          fwmark for bypassing the queue\n"
-        "  -n <number>        netfilter queue number\n"
+        "  -n <number>        netfilter queue number (0-65535)\n"
         "  -r <repeat>        duplicate generated packets for <repeat> times\n"
         "  -t <ttl>           TTL for generated packets\n"
         "  -x <mask>          set the mask for fwmark\n"
@@ -266,7 +266,7 @@ int main(int argc, char *argv[])
                 break;
 
             case 'n':
-                if (parse_ull_arg(optarg, 1, UINT16_MAX, &tmp) < 0) {
+                if (parse_ull_arg(optarg, 0, UINT16_MAX, &tmp) < 0) {
                     fprintf(stderr, "%s: invalid value for -n.\n", argv[0]);
                     print_usage(argv[0]);
                     goto free_mem;
@@ -388,7 +388,7 @@ int main(int argc, char *argv[])
             goto free_mem;
         }
 
-        if (g_ctx.logfp == stderr) {
+        if (!g_ctx.logpath) {
             g_ctx.silent = 1;
         }
     }

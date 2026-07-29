@@ -1,5 +1,4 @@
 'use strict';
-'require dom';
 'require view';
 'require form';
 'require fs';
@@ -7,13 +6,18 @@
 'require ui';
 'require tools.widgets as widgets';
 
+var serviceBusy = false;
+var serviceReadonly = true;
+
 function callInit(action) {
-	return L.resolveDefault(fs.exec_direct('/etc/init.d/fakehttp', [ action ]), '');
+	return fs.exec('/etc/init.d/fakehttp', [ action ]);
 }
 
 function getStatus() {
 	return callInit('status').then(function(res) {
-		return String(res).trim() === 'running';
+		return res.code === 0 && String(res.stdout).trim() === 'running';
+	}).catch(function() {
+		return null;
 	});
 }
 
@@ -23,39 +27,92 @@ function setStatus(running) {
 	if (!status)
 		return;
 
-	status.textContent = running ? _('Running') : _('Stopped');
+	status.textContent = running == null ? _('Unavailable') :
+		(running ? _('Running') : _('Stopped'));
 	status.className = running ? 'ifacebadge ifacebadge-active' : 'ifacebadge';
 }
 
-function setButtons(disabled) {
+function setButtons(running) {
 	document.querySelectorAll('#fakehttp_service_buttons button').forEach(function(btn) {
-		btn.disabled = disabled;
-		btn.blur();
+		var action = btn.getAttribute('data-action');
+
+		btn.disabled = serviceReadonly || serviceBusy || running == null ||
+			(action === 'start' ? running : !running);
+		if (btn.disabled)
+			btn.blur();
+	});
+}
+
+function updateService(running) {
+	setStatus(running);
+	setButtons(running);
+}
+
+function waitForStatus(expected, attempts) {
+	return getStatus().then(function(running) {
+		if (running === expected || attempts <= 1)
+			return running;
+
+		return new Promise(function(resolve) {
+			window.setTimeout(resolve, 250);
+		}).then(function() {
+			return waitForStatus(expected, attempts - 1);
+		});
 	});
 }
 
 function handleAction(action) {
-	var map = document.querySelector('.cbi-map');
-	var run = Promise.resolve();
+	var expected = action !== 'stop';
 
-	setButtons(true);
+	serviceBusy = true;
+	setButtons(null);
 
-	if (action === 'restart') {
-		run = dom.callClassMethod(map, 'save')
-			.then(L.bind(ui.changes.apply, ui.changes));
-	}
-
-	return run.then(function() {
-		return callInit(action);
-	}).then(function() {
-		return getStatus();
+	return callInit(action).then(function(res) {
+		if (res.code !== 0) {
+			throw new Error(String(res.stderr || res.stdout ||
+				_('Service action failed')).trim());
+		}
+		return waitForStatus(expected, 9);
 	}).then(function(running) {
-		setStatus(running);
-		setButtons(false);
+		if (running == null)
+			throw new Error(_('Unable to read FakeHTTP service status'));
+		if (expected && !running)
+			throw new Error(_('FakeHTTP did not start'));
+		if (!expected && running)
+			throw new Error(_('FakeHTTP did not stop'));
+
+		serviceBusy = false;
+		updateService(running);
 	}).catch(function(err) {
-		setButtons(false);
+		serviceBusy = false;
 		ui.addNotification(null, E('p', {}, [ err.message || err ]), 'error');
+		return getStatus().then(updateService);
 	});
+}
+
+function validatePayload(section_id, value) {
+	var typeOption = L.toArray(this.map.lookupOption('type', section_id))[0];
+	var enabledOption = L.toArray(this.map.lookupOption('enabled', section_id))[0];
+	var type = typeOption ? typeOption.formvalue(section_id) : 'http';
+	var enabled = enabledOption ? enabledOption.formvalue(section_id) : '1';
+
+	if (enabled === '0')
+		return true;
+
+	if (!value)
+		return _('A payload is required');
+	if (/[\x00-\x1f\x7f]/.test(value))
+		return _('Control characters are not allowed');
+
+	if (type === 'binary')
+		return value.charAt(0) === '/' ? true : _('Binary payload path must be absolute');
+
+	if (value.length > 253)
+		return _('Host name is too long');
+	if (/[^\x21-\x7e]/.test(value) || /[\/\\]/.test(value))
+		return _('Enter a valid host name');
+
+	return true;
 }
 
 return view.extend({
@@ -83,6 +140,7 @@ return view.extend({
 		s = m.section(form.GridSection, 'payload', _('Payloads'));
 		s.anonymous = true;
 		s.addremove = true;
+		s.addbtntitle = _('Add payload');
 		s.sortable = true;
 		s.nodescriptions = true;
 
@@ -95,10 +153,12 @@ return view.extend({
 		o.value('http', 'HTTP');
 		o.value('https', 'HTTPS');
 		o.value('binary', _('Binary'));
+		o.default = 'http';
 		o.editable = true;
 		o.rmempty = false;
 
 		o = s.option(form.Value, 'payload', _('Payload'));
+		o.validate = validatePayload;
 		o.editable = true;
 		o.rmempty = false;
 
@@ -132,7 +192,7 @@ return view.extend({
 		o.rmempty = false;
 
 		o = s.option(form.Value, 'queue_number', _('NFQUEUE number'));
-		o.datatype = 'or(-1,uinteger)';
+		o.datatype = 'or(-1,range(0,65535))';
 		o.placeholder = '-1';
 		o.rmempty = false;
 
@@ -151,36 +211,61 @@ return view.extend({
 
 		return getStatus().then(function(running) {
 			return m.render().then(function(node) {
+				serviceReadonly = m.readonly === true;
 				var service = E('div', { 'class': 'cbi-section' }, [
 					E('h3', {}, _('Service')),
-					E('p', {}, [
-						_('Status'), ': ',
-						E('span', { 'id': 'fakehttp_status' }, '')
-					]),
-					E('div', { 'id': 'fakehttp_service_buttons', 'class': 'right' }, [
-						E('button', {
-							'class': 'btn cbi-button cbi-button-apply',
-							'click': function(ev) {
-								ev.preventDefault();
-								return handleAction('restart');
-							}
-						}, _('Restart')),
-						' ',
-						E('button', {
-							'class': 'btn cbi-button cbi-button-reset',
-							'click': function(ev) {
-								ev.preventDefault();
-								return handleAction('stop');
-							}
-						}, _('Stop'))
+					E('div', { 'class': 'cbi-section-node' }, [
+						E('div', { 'class': 'cbi-value' }, [
+							E('label', { 'class': 'cbi-value-title' }, _('Status')),
+							E('div', { 'class': 'cbi-value-field' }, [
+								E('span', { 'id': 'fakehttp_status' }, '')
+							])
+						]),
+						E('div', {
+							'id': 'fakehttp_service_buttons',
+							'class': 'cbi-page-actions'
+						}, [
+							E('button', {
+								'type': 'button',
+								'data-action': 'start',
+								'class': 'btn cbi-button cbi-button-positive',
+								'title': _('Start FakeHTTP'),
+								'click': function(ev) {
+									ev.preventDefault();
+									return handleAction('start');
+								}
+							}, _('Start')),
+							' ',
+							E('button', {
+								'type': 'button',
+								'data-action': 'restart',
+								'class': 'btn cbi-button cbi-button-apply',
+								'title': _('Restart FakeHTTP'),
+								'click': function(ev) {
+									ev.preventDefault();
+									return handleAction('restart');
+								}
+							}, _('Restart')),
+							' ',
+							E('button', {
+								'type': 'button',
+								'data-action': 'stop',
+								'class': 'btn cbi-button cbi-button-negative',
+								'title': _('Stop FakeHTTP'),
+								'click': function(ev) {
+									ev.preventDefault();
+									return handleAction('stop');
+								}
+							}, _('Stop'))
+						])
 					])
 				]);
 
 				node.insertBefore(service, node.firstChild);
-				setStatus(running);
+				updateService(running);
 
 				poll.add(function() {
-					return getStatus().then(setStatus);
+					return getStatus().then(updateService);
 				});
 
 				return node;

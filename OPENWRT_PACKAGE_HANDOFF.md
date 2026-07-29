@@ -5,7 +5,7 @@ compaction. It intentionally excludes router passwords and secrets.
 
 ## Current Branch
 
-- Branch: `codex/bug-hunt`
+- Branch: `codex/input-validation`
 - Base bug-hunt commits are already in this branch:
   - `9d81228 Fix packet handling and document OpenWrt audit`
   - `772bb8d Handle IPv6 extension headers`
@@ -51,12 +51,15 @@ runtime names:
 - `libnetfilter-queue`
 - `libnfnetlink`
 - `libmnl`
-- `nftables-nojson`
+- `nftables` (the virtual package dependency)
 - `kmod-nfnetlink-queue`
 - `kmod-nft-queue`
 
 Using APK runtime names such as `libnetfilter-queue1` in `DEPENDS` causes SDK
-dependency warnings.
+dependency warnings. Depending on the `nftables` virtual package is also
+important: a hard dependency on `nftables-nojson` conflicts with routers that
+already use the mutually exclusive `nftables-json` provider required by
+`firewall4`.
 
 The local smoke test is:
 
@@ -295,3 +298,45 @@ The second backup is the one taken immediately before upgrading to
     `9bddf64c1bfee9c109a3ddafdfc0dd45534a510acd650ba4f20efc82fe3cfc74`
 - The valid pre-upgrade router backup is:
   `/root/fakehttp-release-backup-r4-to-r5-20260716-051738`.
+
+## r6 And LuCI r3 Validation On 2026-07-29
+
+- Candidate packages `fakehttp-99.2-r6` and `luci-app-fakehttp-99.2-r3` were
+  built with the OpenWrt 25.12.5 x86_64 SDK and installed on the production
+  router after creating `/root/fakehttp-backups/r6-test-20260729-015133`.
+- The first install attempt exposed an APK dependency bug: requiring
+  `nftables-nojson` conflicted with the installed `nftables-json` provider.
+  Changing the package to depend on virtual `nftables` allowed installation
+  without replacing `firewall4` dependencies or changing the active service.
+- The LuCI page now separates status read permission from Start, Restart, and
+  Stop write permission. It uses `fs.exec`, reports action failures, polls for
+  the expected state, and no longer applies unrelated pending LuCI changes when
+  Restart is pressed. Payload validation now matches backend ASCII/path rules,
+  disabled empty payload rows remain editable, and queue number 0 is accepted.
+- Real LuCI testing confirmed Running and Stopped states, button enablement,
+  Stop removing both the process and queue 512, Start creating PID 29341, and
+  Restart replacing it with PID 29713. A 90-character Unicode hostname was
+  rejected before UCI write, and reloading restored the original form value.
+- A 900-second non-silent window kept PID 13013 unchanged. Every one-minute
+  sample had queue 512 backlog 0, kernel drops 0, and userspace drops 0. The
+  packet sequence advanced from 9,172 to 19,067 between the first and final
+  minute samples.
+- The window captured 13,857 new log lines, 13,825 from FakeHTTP, with zero
+  anomaly matches and no related kernel messages. RSS warmed from 888 to 924
+  KiB and stayed at 924 KiB from minute 9 through minute 15; VmSize 1,152 KiB,
+  swap 0, five file descriptors, and one thread stayed fixed.
+- Fifteen fixed 64 MiB TUNA downloads all returned HTTP 206 and the complete
+  67,108,864 bytes from `101.6.15.130`. Median throughput was 210.98 Mbps, with
+  an 86.86-328.43 Mbps range. The variation prevents a performance conclusion,
+  but download completeness and queue health show no runtime failure.
+- Linux release tests, ASan/LeakSan/UBSan tests, GCC `-fanalyzer`, CLI and unit
+  tests, LuCI JavaScript/JSON checks, shell checks, package smoke checks, and
+  `git diff --check` all passed.
+- Production was restored to silent mode as PID 30280 with the original three
+  WAN interfaces, six enabled payloads, `repeat=1`, and config SHA-256
+  `ce2442350bb96c5896025fb7081a4a85465624beae2f1b1cabbee27dd55a7c6c`.
+  Queue 512 again had zero backlog and zero kernel/userspace drops. After 63
+  seconds it had processed 464 packets with no verbose SYN/FAKE log growth.
+- Non-blocking residual risks are slow leaks beyond the 15-minute window and
+  untested fault injection for queue saturation, verdict/send failures, and
+  live interface disappearance/recreation.

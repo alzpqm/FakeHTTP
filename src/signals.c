@@ -44,6 +44,28 @@ static void signal_handler(int sig)
 }
 
 
+static void normalize_deleted_exe_path(char *path)
+{
+    static const char deleted_suffix[] = " (deleted)";
+
+    size_t path_len, suffix_len;
+
+    path_len = strlen(path);
+    suffix_len = sizeof(deleted_suffix) - 1;
+    if (path_len <= suffix_len ||
+        strcmp(path + path_len - suffix_len, deleted_suffix) != 0) {
+        return;
+    }
+
+    /* Do not alter a real executable whose filename ends in " (deleted)". */
+    if (access(path, F_OK) == 0 || errno != ENOENT) {
+        return;
+    }
+
+    path[path_len - suffix_len] = 0;
+}
+
+
 int fh_signal_setup(void)
 {
     struct sigaction sa;
@@ -101,6 +123,7 @@ int fh_kill_running(int signal)
         return -1;
     }
     self_path[len] = 0;
+    normalize_deleted_exe_path(self_path);
 
     procfs = opendir("/proc");
     if (!procfs) {
@@ -133,6 +156,7 @@ int fh_kill_running(int signal)
             continue;
         }
         proc_path[len] = 0;
+        normalize_deleted_exe_path(proc_path);
 
         if (strcmp(self_path, proc_path) == 0) {
             matched = 1;

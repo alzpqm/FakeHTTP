@@ -71,6 +71,7 @@ expect_invalid -y 100 "dynamic percentage upper bound"
 expect_invalid -y " 50" "leading whitespace"
 
 expect_parsed -m 0xffffffff "maximum fwmark"
+expect_parsed -n 0 "minimum NFQUEUE number"
 expect_parsed -n 65535 "maximum NFQUEUE number"
 expect_parsed -r 0xa "hexadecimal repeat"
 expect_parsed -t 0377 "octal TTL"

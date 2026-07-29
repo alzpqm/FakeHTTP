@@ -19,6 +19,9 @@ ifdef VERSION
 endif
 
 FAKEHTTP=$(BUILDDIR)/fakehttp
+TEST_CORE=$(BUILDDIR)/test-core-validation
+TEST_PACKET=$(BUILDDIR)/test-packet-validation
+TEST_SIGNALS=$(BUILDDIR)/test-signals
 
 ifeq ($(STATIC), 1)
 	override LDFLAGS += -static
@@ -36,8 +39,11 @@ all: $(FAKEHTTP)
 debug:
 	$(MAKE) DEBUG=1
 
-test: all
+test: all $(TEST_CORE) $(TEST_PACKET) $(TEST_SIGNALS)
 	scripts/test-cli-validation.sh $(FAKEHTTP)
+	$(TEST_CORE)
+	$(TEST_PACKET)
+	scripts/test-signal-validation.sh $(TEST_SIGNALS)
 
 clean:
 	$(RM) -r $(BUILDDIR)
@@ -56,6 +62,18 @@ $(FAKEHTTP): $(OBJS) $(MKS)
 ifneq ($(DEBUG), 1)
 	$(STRIP) $@
 endif
+
+$(TEST_CORE): tests/test-core-validation.c $(BUILDDIR)/globvar.o \
+	$(BUILDDIR)/logging.o $(BUILDDIR)/payload.o $(BUILDDIR)/srcinfo.o
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+
+$(TEST_PACKET): tests/test-packet-validation.c $(BUILDDIR)/globvar.o \
+	$(BUILDDIR)/logging.o $(BUILDDIR)/ipv4pkt.o
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+
+$(TEST_SIGNALS): tests/test-signals.c $(BUILDDIR)/globvar.o \
+	$(BUILDDIR)/logging.o $(BUILDDIR)/signals.o
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 install: all
 	mkdir -p $(DESTDIR)$(BINDIR)

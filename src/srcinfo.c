@@ -33,6 +33,7 @@
 
 struct srcinfo {
     int initialized;
+    int ifindex;
     uint8_t ttl;
     uint8_t hwaddr_len;
     uint8_t hwaddr[8];
@@ -88,8 +89,8 @@ void fh_srcinfo_cleanup(void)
 }
 
 
-int fh_srcinfo_put(struct sockaddr *addr, uint8_t ttl, uint8_t hwaddr[8],
-                   uint8_t hwaddr_len)
+int fh_srcinfo_put(struct sockaddr *addr, int ifindex, uint8_t ttl,
+                   uint8_t hwaddr[8], uint8_t hwaddr_len)
 {
     struct srcinfo *info;
 
@@ -109,6 +110,7 @@ int fh_srcinfo_put(struct sockaddr *addr, uint8_t ttl, uint8_t hwaddr[8],
         return -1;
     }
 
+    info->ifindex = ifindex;
     info->ttl = ttl;
     info->hwaddr_len = hwaddr_len;
     memset(info->hwaddr, 0, sizeof(info->hwaddr));
@@ -121,8 +123,8 @@ int fh_srcinfo_put(struct sockaddr *addr, uint8_t ttl, uint8_t hwaddr[8],
 }
 
 
-int fh_srcinfo_get(struct sockaddr *addr, uint8_t *ttl, uint8_t hwaddr[8],
-                   uint8_t *hwaddr_len)
+int fh_srcinfo_get(struct sockaddr *addr, int ifindex, uint8_t *ttl,
+                   uint8_t hwaddr[8], uint8_t *hwaddr_len)
 {
     size_t i, idx;
     struct srcinfo *info;
@@ -133,7 +135,8 @@ int fh_srcinfo_get(struct sockaddr *addr, uint8_t *ttl, uint8_t hwaddr[8],
         if (!info->initialized) {
             return 1;
         }
-        if (sameip(addr, (struct sockaddr *) &info->addr)) {
+        if (info->ifindex == ifindex &&
+            sameip(addr, (struct sockaddr *) &info->addr)) {
             *ttl = info->ttl;
             *hwaddr_len = info->hwaddr_len;
             memcpy(hwaddr, info->hwaddr, sizeof(info->hwaddr));

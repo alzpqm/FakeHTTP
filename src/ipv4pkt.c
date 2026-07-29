@@ -70,7 +70,7 @@ int fh_pkt4_parse(void *pkt_data, int pkt_len, struct sockaddr *saddr,
 
     tcph = (struct tcphdr *) ((uint8_t *) pkt_data + iph_len);
     tcph_len = tcph->doff * 4;
-    if (pkt_len < iph_len + tcph_len) {
+    if ((size_t) tcph_len < sizeof(*tcph) || pkt_len < iph_len + tcph_len) {
         E("ERROR: invalid packet length: %d", pkt_len);
         return -1;
     }
