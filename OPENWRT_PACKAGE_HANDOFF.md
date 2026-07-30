@@ -340,3 +340,24 @@ The second backup is the one taken immediately before upgrading to
 - Non-blocking residual risks are slow leaks beyond the 15-minute window and
   untested fault injection for queue saturation, verdict/send failures, and
   live interface disappearance/recreation.
+
+## r7 Local Numeric Parsing Validation On 2026-07-30
+
+- r6 interpreted all numeric CLI arguments with C base autodetection. This made
+  leading-zero values octal, conflicting with the decimal semantics shown by
+  LuCI and normally expected from UCI.
+- r7 accepts hexadecimal only with an explicit `0x` or `0X` prefix; all other
+  numeric values, including those with leading zeros, are decimal. Optional
+  leading `+` remains supported.
+- This is an intentional compatibility change: legacy octal `010` changes from
+  8 to 10, while values such as octal `0377` no longer fit the decimal TTL
+  range. Migrate such settings to ordinary decimal or explicit hexadecimal.
+- Regression tests distinguish the old and new behavior across fwmark, queue,
+  repeat, TTL, and percentage limits and reject malformed prefixes.
+- Linux release and sanitizer suites, GCC `-fanalyzer`, local package checks,
+  and the OpenWrt 25.12.5 x86_64 SDK build passed.
+- Local artifact: `fakehttp-99.2-r7.apk`, SHA-256
+  `4a7bbec495f152ea563a3aa5517cce56bcf7e45ec7fa29a10b492a4e3c8cf02c`.
+- This candidate was not installed on the production router. No router login,
+  service restart, configuration change, temporary mark, or queue 512/513
+  access occurred during this validation.

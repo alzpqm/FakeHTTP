@@ -56,6 +56,9 @@ Advanced Options:
 
 ```
 
+Numeric option values are decimal unless prefixed with `0x` or `0X`. Legacy
+leading-zero octal notation is not supported; remove the leading zero for
+decimal or use an explicit hexadecimal prefix.
 
 ## License
 

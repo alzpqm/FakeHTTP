@@ -86,6 +86,7 @@ static void print_usage(const char *name)
         "  -y <pct>           raise TTL dynamically to <pct>%% of estimated "
         "hops\n"
         "  -z                 use iptables commands instead of nft\n"
+        "  Numeric values are decimal unless prefixed with 0x or 0X.\n"
         "\n"
         "FakeHTTP version " VERSION "\n";
 
@@ -96,7 +97,9 @@ static void print_usage(const char *name)
 static int parse_ull_arg(const char *value, unsigned long long min,
                          unsigned long long max, unsigned long long *result)
 {
+    const char *digits;
     char *end;
+    int base;
     unsigned long long parsed;
 
     if (!value || !value[0] || value[0] == '-' ||
@@ -104,9 +107,13 @@ static int parse_ull_arg(const char *value, unsigned long long min,
         return -1;
     }
 
+    digits = value + (value[0] == '+');
+    base = digits[0] == '0' &&
+           (digits[1] == 'x' || digits[1] == 'X') ? 16 : 10;
+
     errno = 0;
     end = NULL;
-    parsed = strtoull(value, &end, 0);
+    parsed = strtoull(value, &end, base);
     if (errno || end == value || *end || parsed < min || parsed > max) {
         return -1;
     }

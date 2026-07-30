@@ -544,3 +544,32 @@ was not treated as evidence.
 Remaining non-blocking coverage gaps are a multi-hour or 24-hour RSS/FD trend
 and deliberate fault injection for NFQUEUE saturation, verdict/send failures,
 and interface disappearance/recreation.
+
+## 2026-07-30 r7 numeric parser consistency audit
+
+LocalAI identified that r6 parsed every numeric CLI value with
+`strtoull(..., 0)`. Consequently, a leading zero silently selected octal:
+`010` became 8 and `018` was rejected. LuCI and ordinary UCI editing present
+these fields as decimal values, so the same visible input had different
+semantics across interfaces.
+
+- r7 now treats only an explicit `0x` or `0X` prefix, after an optional `+`,
+  as hexadecimal. Every other accepted numeric input is decimal. Negative
+  values, whitespace, trailing data, range violations, and overflow remain
+  rejected.
+- This intentionally removes legacy octal interpretation: for example, `010`
+  changes from 8 to 10 and `0377` is no longer a valid TTL. Existing
+  configurations should use ordinary decimal or an explicit hexadecimal
+  prefix.
+- CLI regressions cover decimal `010` and `018`, explicit hexadecimal values,
+  decimal-only upper-bound distinctions for mark, queue, repeat, TTL, and
+  percentage, plus malformed sign and hexadecimal prefixes.
+- Linux release tests, ASan/LeakSan/UBSan, GCC `-fanalyzer`, package smoke
+  checks, LuCI and shell syntax, diff whitespace checks, and an OpenWrt 25.12.5
+  x86_64 SDK build all passed.
+- The resulting local test artifact is `fakehttp-99.2-r7.apk`, SHA-256
+  `4a7bbec495f152ea563a3aa5517cce56bcf7e45ec7fa29a10b492a4e3c8cf02c`.
+
+This was a local-only audit. The r7 APK was not installed on the production
+router, and neither FakeHTTP queue 512 nor FakeSIP queue 513 was accessed or
+changed.
