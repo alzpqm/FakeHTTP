@@ -209,17 +209,17 @@ int fh_ipt6_setup(void)
         if (i == ipt_cmds_cnt - 1) {
             size_t bypass_i;
 
-            /* Custom protocols must bypass both request and reply directions. */
-            for (bypass_i = 0; bypass_i < g_ctx.bypass_port_cnt;
-                 bypass_i++) {
+            /* Custom protocols must bypass both request and reply directions.
+             */
+            for (bypass_i = 0; bypass_i < g_ctx.bypass_port_cnt; bypass_i++) {
                 char *bypass_dport_cmd[] = {
-                    "ip6tables", "-w", "-t", "mangle", "-A", "FAKEHTTP_R",
-                    "-p",        "tcp", "--dport", port_str, "-j", "RETURN",
-                    NULL};
+                    "ip6tables",  "-w",     "-t",  "mangle",  "-A",
+                    "FAKEHTTP_R", "-p",     "tcp", "--dport", port_str,
+                    "-j",         "RETURN", NULL};
                 char *bypass_sport_cmd[] = {
-                    "ip6tables", "-w", "-t", "mangle", "-A", "FAKEHTTP_R",
-                    "-p",        "tcp", "--sport", port_str, "-j", "RETURN",
-                    NULL};
+                    "ip6tables",  "-w",     "-t",  "mangle",  "-A",
+                    "FAKEHTTP_R", "-p",     "tcp", "--sport", port_str,
+                    "-j",         "RETURN", NULL};
 
                 res = snprintf(port_str, sizeof(port_str), "%" PRIu16,
                                g_ctx.bypass_ports[bypass_i]);

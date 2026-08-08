@@ -109,8 +109,8 @@ static int parse_ull_arg(const char *value, unsigned long long min,
     }
 
     digits = value + (value[0] == '+');
-    base = digits[0] == '0' &&
-           (digits[1] == 'x' || digits[1] == 'X') ? 16 : 10;
+    base = digits[0] == '0' && (digits[1] == 'x' || digits[1] == 'X') ? 16
+                                                                      : 10;
 
     errno = 0;
     end = NULL;
@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
                     print_usage(argv[0]);
                     goto free_mem;
                 }
-                g_ctx.bypass_ports[g_ctx.bypass_port_cnt++] = (uint16_t)tmp;
+                g_ctx.bypass_ports[g_ctx.bypass_port_cnt++] = (uint16_t) tmp;
                 break;
 
             case 'r':
