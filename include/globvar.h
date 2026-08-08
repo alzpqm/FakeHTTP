@@ -26,6 +26,8 @@
 
 #include "payload.h"
 
+#define FH_MAX_BYPASS_PORTS 32
+
 struct fh_context {
     volatile sig_atomic_t exit;
     FILE *logfp;
@@ -42,6 +44,8 @@ struct fh_context {
     /* -k */ int killproc;
     /* -m */ uint32_t fwmark;
     /* -n */ uint32_t nfqnum;
+    /* -p */ uint16_t bypass_ports[FH_MAX_BYPASS_PORTS];
+    size_t bypass_port_cnt;
     /* -r */ int repeat;
     /* -s */ int silent;
     /* -t */ uint8_t ttl;

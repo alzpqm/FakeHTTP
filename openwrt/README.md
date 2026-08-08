@@ -9,9 +9,9 @@ These prebuilt APK packages target OpenWrt 25.12 x86_64. On the router, run:
 
 ```sh
 cd /tmp
-wget https://github.com/alzpqm/FakeHTTP/releases/download/openwrt-99.2-r5/fakehttp-99.2-r5.apk
-wget https://github.com/alzpqm/FakeHTTP/releases/download/openwrt-99.2-r5/luci-app-fakehttp-99.2-r2.apk
-apk add --allow-untrusted ./fakehttp-99.2-r5.apk ./luci-app-fakehttp-99.2-r2.apk
+wget https://github.com/alzpqm/FakeHTTP/releases/download/openwrt-99.2-r8/fakehttp-99.2-r8.apk
+wget https://github.com/alzpqm/FakeHTTP/releases/download/openwrt-99.2-r8/luci-app-fakehttp-99.2-r4.apk
+apk add --allow-untrusted ./fakehttp-99.2-r8.apk ./luci-app-fakehttp-99.2-r4.apk
 ```
 
 Open `Services -> FakeHTTP` in LuCI to configure the service. For a quick
@@ -72,6 +72,19 @@ uci commit fakehttp
 /etc/init.d/fakehttp enable
 /etc/init.d/fakehttp restart
 ```
+
+When a service uses a non-standard HTTP-like port with its own request
+protocol, skip FakeHTTP injection for that TCP port. The port is skipped in
+both directions and can be repeated:
+
+```sh
+uci add_list fakehttp.advanced.bypass_port='65499'
+uci commit fakehttp
+/etc/init.d/fakehttp restart
+```
+
+This is useful for China Speed Test data connections, which use port 65499
+but require `/speed/...` requests rather than a generic `GET /`.
 
 Use `list interface 'pppoe-wan'` or another Linux interface name in
 `/etc/config/fakehttp`. The helper `fakehttp-setup` can accept either a LuCI

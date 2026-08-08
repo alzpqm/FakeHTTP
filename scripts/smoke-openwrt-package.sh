@@ -27,6 +27,9 @@ grep -q "/etc/init.d/fakehttp restart" openwrt/fakehttp/Makefile
 grep -q 'remove|deinstall|uninstall)' openwrt/fakehttp/Makefile
 grep -q "config globals 'globals'" "$ROOT/etc/config/fakehttp"
 grep -q 'append_queue_number' "$ROOT/etc/init.d/fakehttp"
+grep -q 'bypass_port' "$ROOT/etc/init.d/fakehttp"
+grep -q "range(1,65535)" \
+	openwrt/luci-app-fakehttp/htdocs/luci-static/resources/view/fakehttp.js
 grep -q "or(-1,range(0,65535))" \
 	openwrt/luci-app-fakehttp/htdocs/luci-static/resources/view/fakehttp.js
 grep -q '"/etc/init.d/fakehttp start"' \

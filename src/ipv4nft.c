@@ -98,8 +98,9 @@ static int nft4_iface_setup(void)
 int fh_nft4_setup(void)
 {
     int res;
+    size_t i, bypass_len;
     char *nft_cmd[] = {"nft", "-f", "-", NULL};
-    char nft_conf_buff[2048];
+    char bypass_rules[4096], nft_conf_buff[8192];
     char *nft_conf_fmt =
         "table ip fakehttp {\n"
         "    chain fh_prerouting {\n"
@@ -139,6 +140,7 @@ int fh_nft4_setup(void)
             exclude marked packets
         */
         "        meta mark and %" PRIu32 " == %" PRIu32 " return;\n"
+        "        %s"
         /*
             send to nfqueue
         */
@@ -154,8 +156,24 @@ int fh_nft4_setup(void)
 
     fh_nft4_cleanup();
 
+    bypass_len = 0;
+    bypass_rules[0] = '\0';
+    for (i = 0; i < g_ctx.bypass_port_cnt; i++) {
+        /* Custom protocols must bypass both request and reply directions. */
+        res = snprintf(bypass_rules + bypass_len,
+                       sizeof(bypass_rules) - bypass_len,
+                       "tcp dport %" PRIu16 " return;\n"
+                       "        tcp sport %" PRIu16 " return;\n",
+                       g_ctx.bypass_ports[i], g_ctx.bypass_ports[i]);
+        if (res < 0 || (size_t) res >= sizeof(bypass_rules) - bypass_len) {
+            E("ERROR: bypass port rules are too long");
+            return -1;
+        }
+        bypass_len += (size_t) res;
+    }
+
     res = snprintf(nft_conf_buff, sizeof(nft_conf_buff), nft_conf_fmt,
-                   g_ctx.fwmask, g_ctx.fwmark, g_ctx.nfqnum);
+                   g_ctx.fwmask, g_ctx.fwmark, bypass_rules, g_ctx.nfqnum);
     if (res < 0 || (size_t) res >= sizeof(nft_conf_buff)) {
         E("ERROR: snprintf(): %s", "failure");
         return -1;

@@ -573,3 +573,42 @@ semantics across interfaces.
 This was a local-only audit. The r7 APK was not installed on the production
 router, and neither FakeHTTP queue 512 nor FakeSIP queue 513 was accessed or
 changed.
+
+## 2026-08-08 r8 China Speed Test protocol isolation
+
+The Global Speed Test application was reported to stay near 150 Mbps download
+while Debian's Ookla client (`speedtest -s 24447`) ran at line rate. A packet
+capture with the released FakeHTTP behavior proved that the application's
+custom TCP protocol was being contaminated: on port 65499, FakeHTTP injected
+its generic `GET /` request before the real `/speed/...` request. That protocol
+does not accept a generic HTTP request on the same connection.
+
+- r8 adds repeatable TCP port bypasses. The bypass is installed before the
+  NFQUEUE rules in both nftables and iptables paths and matches both `tcp dport`
+  and `tcp sport`, so the request and reply directions are excluded.
+- The OpenWrt service and LuCI page expose `bypass_port`; the router's active
+  configuration contains `65499`. A new packet capture showed only the real
+  `/speed/dovalid` and `/speed/File(1G).dl` requests, with no FakeHTTP `GET /`.
+- The r8 package was built with the official OpenWrt 25.12.5 x86_64 SDK and
+  installed on the router. Debian native release tests, CLI validation, core
+  validation, packet validation, and signal validation all passed.
+- With r8 enabled, Debian Ookla server 24447 measured 2290.13 Mbps download
+  and 189.12 Mbps upload. This confirms that r8 does not impose a general
+  download ceiling.
+- The Global Speed Test result remained destination-dependent: Chongqing
+  Telecom was about 102 Mbps down, Shanghai Telecom about 51 Mbps down, and
+  Shanghai Unicom about 28 Mbps down. Turning FakeHTTP off for the same
+  Shanghai Telecom selection measured about 29 Mbps down; temporarily pinning
+  the Shanghai Unicom test to wan2 measured about 29 Mbps down as well. These
+  controls do not support FakeHTTP or the original balanced policy as the
+  remaining bottleneck.
+- All temporary mwan3 marks, captures, and test processes were removed. The
+  router ended with the original balanced configuration, FakeHTTP r8 running
+  silently, and `/tmp` space restored.
+
+Conclusion: r8 fixes the confirmed FakeHTTP protocol bug, but it cannot turn a
+low-capacity or path-limited 65499 speed-test server into the Ookla server's
+2290 Mbps path. Port 65499 should remain bypassed rather than being used as a
+generic FakeHTTP payload target. The Global Speed Test node, server protocol,
+or carrier classification needs separate investigation; promoting its host as
+a FakeHTTP payload is not supported by these controls.

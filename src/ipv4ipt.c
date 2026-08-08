@@ -21,6 +21,7 @@
 #include "ipv4ipt.h"
 
 #include <inttypes.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <net/if.h>
 
@@ -89,6 +90,7 @@ static int ipt4_iface_setup(void)
 int fh_ipt4_setup(void)
 {
     char xmark_str[64], nfqnum_str[32];
+    char port_str[6];
     size_t i, ipt_cmds_cnt, ipt_opt_cmds_cnt;
     int res;
     char *ipt_cmds[][32] = {
@@ -211,6 +213,41 @@ int fh_ipt4_setup(void)
     fh_ipt4_cleanup();
 
     for (i = 0; i < ipt_cmds_cnt; i++) {
+        if (i == ipt_cmds_cnt - 1) {
+            size_t bypass_i;
+
+            /* Custom protocols must bypass both request and reply directions. */
+            for (bypass_i = 0; bypass_i < g_ctx.bypass_port_cnt;
+                 bypass_i++) {
+                char *bypass_dport_cmd[] = {
+                    "iptables", "-w", "-t", "mangle", "-A", "FAKEHTTP_R",
+                    "-p",       "tcp", "--dport", port_str, "-j", "RETURN",
+                    NULL};
+                char *bypass_sport_cmd[] = {
+                    "iptables", "-w", "-t", "mangle", "-A", "FAKEHTTP_R",
+                    "-p",       "tcp", "--sport", port_str, "-j", "RETURN",
+                    NULL};
+
+                res = snprintf(port_str, sizeof(port_str), "%" PRIu16,
+                               g_ctx.bypass_ports[bypass_i]);
+                if (res < 0 || (size_t) res >= sizeof(port_str)) {
+                    E("ERROR: snprintf(): %s", "failure");
+                    return -1;
+                }
+
+                res = fh_execute_command(bypass_dport_cmd, 0, NULL);
+                if (res < 0) {
+                    E(T(fh_execute_command));
+                    return -1;
+                }
+                res = fh_execute_command(bypass_sport_cmd, 0, NULL);
+                if (res < 0) {
+                    E(T(fh_execute_command));
+                    return -1;
+                }
+            }
+        }
+
         res = fh_execute_command(ipt_cmds[i], 0, NULL);
         if (res < 0) {
             E(T(fh_execute_command));

@@ -43,6 +43,15 @@ append_queue_number()
 		procd_append_param command -n "$value"
 }
 
+append_bypass_port()
+{
+	local value="$1"
+
+	[ "$value" -ge 1 ] 2>/dev/null &&
+		[ "$value" -le 65535 ] 2>/dev/null &&
+		procd_append_param command -p "$value"
+}
+
 append_interface()
 {
 	local value="$1"
@@ -85,6 +94,7 @@ append_advanced()
 	append_number advanced fwmark_bypassing -m
 	append_number advanced fwmark_handle -x
 	append_queue_number
+	config_list_foreach advanced bypass_port append_bypass_port
 	append_number advanced repeat -r
 	append_number advanced ttl -t
 	append_flag advanced use_iptables -z

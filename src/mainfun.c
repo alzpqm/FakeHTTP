@@ -80,6 +80,7 @@ static void print_usage(const char *name)
         "  -g                 disable hop count estimation\n"
         "  -m <mark>          fwmark for bypassing the queue\n"
         "  -n <number>        netfilter queue number (0-65535)\n"
+        "  -p <port>          bypass destination TCP port (repeatable)\n"
         "  -r <repeat>        duplicate generated packets for <repeat> times\n"
         "  -t <ttl>           TTL for generated packets\n"
         "  -x <mask>          set the mask for fwmark\n"
@@ -158,7 +159,7 @@ int main(int argc, char *argv[])
 
     plinfo_cnt = iface_cnt = 0;
 
-    while ((opt = getopt(argc, argv, "0146ab:de:fgh:i:km:n:r:st:w:x:y:z")) !=
+    while ((opt = getopt(argc, argv, "0146ab:de:fgh:i:km:n:p:r:st:w:x:y:z")) !=
            -1) {
         switch (opt) {
             case '0':
@@ -279,6 +280,16 @@ int main(int argc, char *argv[])
                     goto free_mem;
                 }
                 g_ctx.nfqnum = tmp;
+                break;
+
+            case 'p':
+                if (parse_ull_arg(optarg, 1, UINT16_MAX, &tmp) < 0 ||
+                    g_ctx.bypass_port_cnt >= FH_MAX_BYPASS_PORTS) {
+                    fprintf(stderr, "%s: invalid value for -p.\n", argv[0]);
+                    print_usage(argv[0]);
+                    goto free_mem;
+                }
+                g_ctx.bypass_ports[g_ctx.bypass_port_cnt++] = (uint16_t)tmp;
                 break;
 
             case 'r':

@@ -15,7 +15,7 @@ fakehttp -h www.example.com -i eth0
 ## OpenWrt
 
 An x86_64 package and LuCI control page are available in the
-[OpenWrt 99.2-r5 release](https://github.com/alzpqm/FakeHTTP/releases/tag/openwrt-99.2-r5).
+[OpenWrt 99.2-r8 release](https://github.com/alzpqm/FakeHTTP/releases/tag/openwrt-99.2-r8).
 See [openwrt/README.md](openwrt/README.md) for installation and setup.
 
 
@@ -48,6 +48,7 @@ Advanced Options:
   -g                 disable hop count estimation
   -m <mark>          fwmark for bypassing the queue
   -n <number>        netfilter queue number (0-65535)
+  -p <port>          bypass destination TCP port (repeatable)
   -r <repeat>        duplicate generated packets for <repeat> times
   -t <ttl>           TTL for generated packets
   -x <mask>          set the mask for fwmark

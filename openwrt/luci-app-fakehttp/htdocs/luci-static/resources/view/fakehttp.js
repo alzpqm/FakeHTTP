@@ -196,6 +196,11 @@ return view.extend({
 		o.placeholder = '-1';
 		o.rmempty = false;
 
+		o = s.option(form.DynamicList, 'bypass_port', _('Bypass TCP ports'));
+		o.datatype = 'range(1,65535)';
+		o.placeholder = '65499';
+		o.rmempty = true;
+
 		o = s.option(form.Value, 'repeat', _('Packet repeat'));
 		o.datatype = 'or(-1,range(1,10))';
 		o.placeholder = '-1';
