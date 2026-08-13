@@ -109,6 +109,9 @@ int fh_execute_command(char **argv, int silent, char *input)
         input_len = strlen(input);
         for (written = 0; written < input_len; written += n) {
             n = write(pipefd[1], input + written, input_len - written);
+            if (n < 0 && errno == EINTR) {
+                continue;
+            }
             if (n < 0) {
                 E("ERROR: write(): %s", strerror(errno));
                 break;
@@ -117,7 +120,11 @@ int fh_execute_command(char **argv, int silent, char *input)
         close(pipefd[1]);
     }
 
-    if (waitpid(pid, &status, 0) < 0) {
+    do {
+        res = waitpid(pid, &status, 0);
+    } while (res < 0 && errno == EINTR);
+
+    if (res < 0) {
         E("ERROR: waitpid(): %s", strerror(errno));
         goto child_failed;
     }

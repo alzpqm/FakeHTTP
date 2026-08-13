@@ -21,6 +21,7 @@ endif
 FAKEHTTP=$(BUILDDIR)/fakehttp
 TEST_CORE=$(BUILDDIR)/test-core-validation
 TEST_PACKET=$(BUILDDIR)/test-packet-validation
+TEST_PROCESS=$(BUILDDIR)/test-process
 TEST_SIGNALS=$(BUILDDIR)/test-signals
 
 ifeq ($(STATIC), 1)
@@ -39,10 +40,11 @@ all: $(FAKEHTTP)
 debug:
 	$(MAKE) DEBUG=1
 
-test: all $(TEST_CORE) $(TEST_PACKET) $(TEST_SIGNALS)
+test: all $(TEST_CORE) $(TEST_PACKET) $(TEST_PROCESS) $(TEST_SIGNALS)
 	scripts/test-cli-validation.sh $(FAKEHTTP)
 	$(TEST_CORE)
 	$(TEST_PACKET)
+	$(TEST_PROCESS)
 	scripts/test-signal-validation.sh $(TEST_SIGNALS)
 
 clean:
@@ -69,6 +71,10 @@ $(TEST_CORE): tests/test-core-validation.c $(BUILDDIR)/globvar.o \
 
 $(TEST_PACKET): tests/test-packet-validation.c $(BUILDDIR)/globvar.o \
 	$(BUILDDIR)/logging.o $(BUILDDIR)/ipv4pkt.o
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+
+$(TEST_PROCESS): tests/test-process.c $(BUILDDIR)/globvar.o \
+	$(BUILDDIR)/logging.o $(BUILDDIR)/process.o
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 $(TEST_SIGNALS): tests/test-signals.c $(BUILDDIR)/globvar.o \

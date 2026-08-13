@@ -43,6 +43,18 @@ findings survive outside the chat context.
   treating them as PIDs, and use a small fixed buffer for `/proc/<pid>/exe`.
 - `src/nfqueue.c`: log packet ID, verdict, and the system error when
   `nfq_set_verdict()` fails.
+- `src/nfqueue.c`: treat every non-zero `nfq_handle_packet()` return as a
+  failure, as required by the libnetfilter_queue API, and include the return
+  value, received length, and errno context in the diagnostic.
+- `src/process.c`: retry `write()` and `waitpid()` when a signal interrupts
+  them with `EINTR`; service restarts previously logged a false command failure
+  when `waitpid()` was interrupted.
+- 2026-08-13 two-day r10 audit: no new confirmed runtime or source bug. The
+  process stayed on one PID for approximately 44h45m after installation;
+  queue512 and all three WAN error/drop counters stayed at zero in a pair of
+  60-second snapshots, with stable RSS/FD/thread counts and no current
+  FakeHTTP/dmesg anomaly matches. A possible `write()`-returns-zero loop was
+  considered but has no reproducer and remains an unconfirmed edge case.
 - `src/payload.c`: use `size_t` for the `snprintf()` destination size and avoid
   calculating the hostname length twice. Validate the TLS SNI hostname length
   before subtracting unsigned sizes, preventing an underflow and out-of-bounds
@@ -612,3 +624,48 @@ low-capacity or path-limited 65499 speed-test server into the Ookla server's
 generic FakeHTTP payload target. The Global Speed Test node, server protocol,
 or carrier classification needs separate investigation; promoting its host as
 a FakeHTTP payload is not supported by these controls.
+
+## 2026-08-13 OpenWrt 21.02-24.10 compatibility work
+
+The package recipe was reviewed for pre-25 OpenWrt releases. OpenWrt 25.12
+continues to use APK/firewall4; 24.10, 23.05, and 22.03 use IPK/opkg with
+firewall4; 21.02 uses IPK/opkg with firewall3/iptables. The 19.07 and older
+series remain outside the release claim.
+
+- FakeHTTP package dependencies now select firewall4 nftables packages only
+  when `PACKAGE_firewall4` is enabled, and select iptables NFQUEUE plus
+  connbytes extensions only when the legacy `PACKAGE_firewall` is enabled.
+- The package uses `TARGET_STRIP` instead of constructing a strip path from
+  `TARGET_CROSS`.
+- The LuCI package now depends on `rpcd-mod-file`, which supplies the RPC used
+  by its `fs.exec` service controls on minimal images.
+- A reusable `tools/build-openwrt-ipk.sh` helper and an OpenWrt compatibility
+  matrix were added. The local package smoke, shell syntax, LuCI JavaScript
+  syntax, and diff checks passed.
+- OpenWrt 22.03.7 package metadata contains all named firewall/NFQUEUE and
+  rpcd packages. Its GCC 11/musl cross-toolchain compiled the current binary,
+  and its `ipkg-build` created valid IPK containers. The full SDK package
+  target was not claimed because the supplied SDK's buildbot/all-packages
+  configuration began an unrelated Linux firmware download and was stopped.
+- OpenWrt 25.12.5's GCC 14/musl cross-toolchain also compiled the current
+  source. No pre-25 package was installed on the production router in this
+  task; the live r10 service and queue 512 were left unchanged.
+
+## 2026-08-13 OpenWrt 25.12 r11 release artifacts
+
+The 25.12 version was advanced together with the pre-25 compatibility work:
+FakeHTTP is `99.2-r11` and LuCI is `99.2-r6`. A reproducible
+`tools/build-openwrt-apk.sh` helper now builds these APKs from the matching
+OpenWrt 25.12 SDK.
+
+- `fakehttp-99.2-r11.apk` SHA-256:
+  `ab5e96e52dac185abf799128f7800c5155117fb6df43189d29d53e3290843213`
+- `luci-app-fakehttp-99.2-r6.apk` SHA-256:
+  `72855ebc96b79b4d5c0eff13e47b3498fae26192f484254e256cbeed9952ba31`
+- SDK `apk verify --allow-untrusted` passed for both artifacts.
+- The package contents were extracted and checked for the binary, init/UCI,
+  LuCI JavaScript, ACL, and menu files.
+
+No release APK was installed on the production router. Its deployed FakeHTTP
+service remains r10 in silent mode; queue 512 was not modified, and queue 513
+was not read or modified.

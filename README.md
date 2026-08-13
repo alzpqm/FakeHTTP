@@ -14,8 +14,8 @@ fakehttp -h www.example.com -i eth0
 
 ## OpenWrt
 
-An x86_64 package and LuCI control page are available in the
-[OpenWrt 99.2-r8 release](https://github.com/alzpqm/FakeHTTP/releases/tag/openwrt-99.2-r8).
+The current x86_64 packages and LuCI control page are available in the
+[OpenWrt 99.2-r11 release](https://github.com/alzpqm/FakeHTTP/releases/tag/openwrt-99.2-r11).
 See [openwrt/README.md](openwrt/README.md) for installation and setup.
 
 

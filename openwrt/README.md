@@ -1,32 +1,51 @@
 # OpenWrt package for FakeHTTP
 
-This directory contains OpenWrt package definitions, a procd service, UCI
-defaults, a LuCI web page, and a small setup helper for FakeHTTP.
+This directory contains the OpenWrt package definitions, a procd service, UCI
+defaults, a LuCI page, and a small setup helper for FakeHTTP.
 
-## Install the x86_64 release
+## Compatibility matrix
 
-These prebuilt APK packages target OpenWrt 25.12 x86_64. On the router, run:
+The package uses the native package format and firewall backend of the target
+OpenWrt release:
+
+| OpenWrt release | Package/install tool | Default firewall | FakeHTTP backend |
+| --- | --- | --- | --- |
+| 25.12 and newer | APK / `apk` | firewall4 / nftables | nftables |
+| 24.10, 23.05, 22.03 | IPK / `opkg` | firewall4 / nftables | nftables |
+| 21.02 | IPK / `opkg` | firewall3 / iptables | iptables |
+
+The package recipe conditionally depends on the firewall4 or firewall3
+extensions selected by the SDK. The core binary contains both backends. If
+the nft command is unavailable at runtime, FakeHTTP falls back to iptables;
+for deterministic operation on OpenWrt 21.02, set `use_iptables` to `1`.
+
+This compatibility work is intended for OpenWrt 21.02 through 25.12. The
+19.07 and older series are end-of-life and are not release-claimed until they
+receive a separate toolchain and LuCI validation pass.
+
+The current package revisions are `fakehttp 99.2-r11` and
+`luci-app-fakehttp 99.2-r6`.
+
+## Build IPK packages for OpenWrt 24.10 and older
+
+Use an SDK matching the router target, architecture, and release. The helper
+adds temporary recipe symlinks to the SDK, builds both packages, copies the
+result to an output directory, and removes only the symlinks it created:
 
 ```sh
-cd /tmp
-wget https://github.com/alzpqm/FakeHTTP/releases/download/openwrt-99.2-r8/fakehttp-99.2-r8.apk
-wget https://github.com/alzpqm/FakeHTTP/releases/download/openwrt-99.2-r8/luci-app-fakehttp-99.2-r4.apk
-apk add --allow-untrusted ./fakehttp-99.2-r8.apk ./luci-app-fakehttp-99.2-r4.apk
+./tools/build-openwrt-ipk.sh /path/to/openwrt-sdk /tmp/fakehttp-ipk
 ```
 
-Open `Services -> FakeHTTP` in LuCI to configure the service. For a quick
-command-line setup, replace the hostname and network name as needed:
+The helper builds from the current working tree. It refuses to overwrite an
+existing `package/fakehttp` or `package/luci-app-fakehttp` path in the SDK.
+The output is normally:
 
-```sh
-fakehttp-setup www.example.com wan
+```text
+/tmp/fakehttp-ipk/fakehttp_99.2-11_<arch>.ipk
+/tmp/fakehttp-ipk/luci-app-fakehttp_99.2-6_all.ipk
 ```
 
-Upgrades preserve `/etc/config/fakehttp`, keep the boot service enabled, and
-restart FakeHTTP automatically when the configured service is enabled.
-
-## Build a package with the OpenWrt SDK
-
-From an OpenWrt SDK checkout:
+The equivalent manual SDK commands are:
 
 ```sh
 ln -s /path/to/FakeHTTP/openwrt/fakehttp package/fakehttp
@@ -36,17 +55,64 @@ make package/fakehttp/compile V=s FAKEHTTP_SOURCE_DIR=/path/to/FakeHTTP
 make package/luci-app-fakehttp/compile V=s
 ```
 
-The generated packages will be under `bin/packages/*/base/`. OpenWrt 24.10 and
-older builds usually emit `.ipk`; newer APK-based builds emit `.apk`.
-
-## Install on a router
+For OpenWrt 22.03, 23.05, and 24.10, keep the default `use_iptables='0'` and
+install the firewall4 NFQUEUE packages selected by the SDK. For OpenWrt
+21.02, install the iptables NFQUEUE and connbytes extensions and select the
+legacy backend before starting the service:
 
 ```sh
-scp bin/packages/*/base/fakehttp_* bin/packages/*/base/luci-app-fakehttp_* root@192.168.1.1:/tmp/
+uci set fakehttp.advanced.use_iptables='1'
+uci commit fakehttp
+/etc/init.d/fakehttp restart
+```
+
+## Install on OpenWrt 24.10 and older
+
+Copy packages built for the exact router target, then install them with
+`opkg`:
+
+```sh
+scp /tmp/fakehttp-ipk/fakehttp_*.ipk root@192.168.1.1:/tmp/
+scp /tmp/fakehttp-ipk/luci-app-fakehttp_*.ipk root@192.168.1.1:/tmp/
 ssh root@192.168.1.1
-opkg install /tmp/fakehttp_*.ipk /tmp/luci-app-fakehttp_*.ipk
-# or, on APK-based OpenWrt:
-# apk add --allow-untrusted /tmp/fakehttp-*.apk /tmp/luci-app-fakehttp-*.apk
+opkg install /tmp/fakehttp_*.ipk
+opkg install /tmp/luci-app-fakehttp_*.ipk
+```
+
+Do not mix an x86_64 package with another target or install a package built
+against a different OpenWrt release's staging libraries.
+
+The LuCI package declares `rpcd-mod-file` because its service controls use
+LuCI's `fs.exec` RPC. If the package manager reports it as unavailable, add
+the matching LuCI/rpcd feed before installing `luci-app-fakehttp`.
+
+## Build and install on OpenWrt 25.12+
+
+OpenWrt 25.12 and newer use APK packages. Build the current APKs with the
+matching SDK:
+
+```sh
+./tools/build-openwrt-apk.sh /path/to/openwrt-sdk /tmp/fakehttp-apk
+```
+
+The SDK must match the router target and release. Install both packages on
+the router with:
+
+```sh
+scp /tmp/fakehttp-apk/fakehttp-*.apk root@192.168.1.1:/tmp/
+scp /tmp/fakehttp-apk/luci-app-fakehttp-*.apk root@192.168.1.1:/tmp/
+ssh root@192.168.1.1
+apk add --allow-untrusted /tmp/fakehttp-*.apk
+apk add --allow-untrusted /tmp/luci-app-fakehttp-*.apk
+```
+
+## Configure and run
+
+Open `Services -> FakeHTTP` in LuCI after installing
+`luci-app-fakehttp`. For a quick command-line setup, replace the hostname and
+network name as needed:
+
+```sh
 fakehttp-setup www.example.com wan
 ```
 
@@ -56,9 +122,7 @@ For HTTPS-style obfuscation:
 fakehttp-setup --https www.example.com wan
 ```
 
-## Manual configuration
-
-Edit `/etc/config/fakehttp` when you need advanced options:
+Manual UCI configuration is available when advanced options are needed:
 
 ```sh
 uci set fakehttp.globals='globals'
@@ -83,12 +147,9 @@ uci commit fakehttp
 /etc/init.d/fakehttp restart
 ```
 
-This is useful for China Speed Test data connections, which use port 65499
-but require `/speed/...` requests rather than a generic `GET /`.
-
 Use `list interface 'pppoe-wan'` or another Linux interface name in
-`/etc/config/fakehttp`. The helper `fakehttp-setup` can accept either a LuCI
-network name such as `wan` or a Linux interface name.
+`/etc/config/fakehttp`. The helper accepts either a LuCI network name such as
+`wan` or a Linux interface name.
 
 Check service status and logs:
 
@@ -96,6 +157,3 @@ Check service status and logs:
 /etc/init.d/fakehttp status
 logread -e fakehttp
 ```
-
-The LuCI page is available at `Services -> FakeHTTP` after installing
-`luci-app-fakehttp`.

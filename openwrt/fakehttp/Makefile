@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=fakehttp
 PKG_VERSION:=99.2
-PKG_RELEASE:=8
+PKG_RELEASE:=11
 
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_LICENSE_FILES:=LICENSE
@@ -19,7 +19,10 @@ define Package/fakehttp
   CATEGORY:=Network
   TITLE:=TCP HTTP obfuscation with NFQUEUE
   URL:=https://github.com/MikeWang000000/FakeHTTP
-  DEPENDS:=+libnetfilter-queue +libnfnetlink +libmnl +nftables +kmod-nfnetlink-queue +kmod-nft-queue
+  DEPENDS:=+libnetfilter-queue +libnfnetlink +libmnl +kmod-nfnetlink-queue \
+    +PACKAGE_firewall4:nftables-json +PACKAGE_firewall4:kmod-nft-queue \
+    +PACKAGE_firewall:iptables-mod-nfqueue \
+    +PACKAGE_firewall:iptables-mod-conntrack-extra
 endef
 
 define Package/fakehttp/description
@@ -42,7 +45,7 @@ endef
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
-		STRIP="$(TARGET_CROSS)strip" \
+		STRIP="$(TARGET_STRIP)" \
 		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
 		LDFLAGS="$(TARGET_LDFLAGS)" \
 		PREFIX=/usr \

@@ -18,11 +18,17 @@ install -m 0755 openwrt/fakehttp/files/usr/sbin/fakehttp-setup "$ROOT/usr/sbin/f
 
 sh -n "$ROOT/etc/init.d/fakehttp"
 sh -n "$ROOT/usr/sbin/fakehttp-setup"
+sh -n tools/build-openwrt-apk.sh
 
 grep -q "Package/fakehttp" openwrt/fakehttp/Makefile
-grep -Eq 'DEPENDS:=.*\+nftables([[:space:]]|$)' openwrt/fakehttp/Makefile
-! grep -q '+nftables-nojson' openwrt/fakehttp/Makefile
+grep -q '+PACKAGE_firewall4:nftables-json' openwrt/fakehttp/Makefile
+grep -q '+PACKAGE_firewall4:kmod-nft-queue' openwrt/fakehttp/Makefile
+grep -q '+PACKAGE_firewall:iptables-mod-nfqueue' openwrt/fakehttp/Makefile
+grep -q '+PACKAGE_firewall:iptables-mod-conntrack-extra' openwrt/fakehttp/Makefile
+grep -q 'STRIP="$(TARGET_STRIP)"' openwrt/fakehttp/Makefile
 grep -q "Package/luci-app-fakehttp" openwrt/luci-app-fakehttp/Makefile
+grep -q 'DEPENDS:=+fakehttp +luci-base +rpcd-mod-file' \
+	openwrt/luci-app-fakehttp/Makefile
 grep -q "/etc/init.d/fakehttp restart" openwrt/fakehttp/Makefile
 grep -q 'remove|deinstall|uninstall)' openwrt/fakehttp/Makefile
 grep -q "config globals 'globals'" "$ROOT/etc/config/fakehttp"
@@ -50,6 +56,7 @@ grep -q "data-action': 'start'" \
 ! grep -q 'ui.changes.apply' \
 	openwrt/luci-app-fakehttp/htdocs/luci-static/resources/view/fakehttp.js
 grep -q "fakehttp-setup" openwrt/README.md
+grep -q "build-openwrt-apk.sh" openwrt/README.md
 
 json_pp < openwrt/luci-app-fakehttp/root/usr/share/luci/menu.d/luci-app-fakehttp.json >/dev/null
 json_pp < openwrt/luci-app-fakehttp/root/usr/share/rpcd/acl.d/luci-app-fakehttp.json >/dev/null

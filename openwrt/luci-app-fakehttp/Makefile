@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-fakehttp
 PKG_VERSION:=99.2
-PKG_RELEASE:=4
+PKG_RELEASE:=6
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=FakeHTTP maintainers
 PKGARCH:=all
@@ -14,7 +14,7 @@ define Package/luci-app-fakehttp
   CATEGORY:=LuCI
   SUBMENU:=3. Applications
   TITLE:=LuCI support for FakeHTTP
-  DEPENDS:=+fakehttp +luci-base
+  DEPENDS:=+fakehttp +luci-base +rpcd-mod-file
 endef
 
 define Package/luci-app-fakehttp/description

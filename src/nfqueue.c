@@ -261,7 +261,7 @@ int fh_nfq_loop(void)
 {
     static const size_t buffsize = UINT16_MAX;
 
-    int res, ret, err_cnt;
+    int res, ret, err, err_cnt;
     ssize_t recv_len;
     char *buff;
 
@@ -298,10 +298,13 @@ int fh_nfq_loop(void)
             }
         }
 
+        errno = 0;
         res = nfq_handle_packet(h, buff, recv_len);
-        if (res < 0) {
+        if (res != 0) {
+            err = errno;
             err_cnt++;
-            E("ERROR: nfq_handle_packet(): %s", "failure");
+            E("ERROR: nfq_handle_packet(): result=%d, len=%zd: %s", res,
+              recv_len, err ? strerror(err) : "failure");
             continue;
         }
 
