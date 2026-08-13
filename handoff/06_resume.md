@@ -1,6 +1,6 @@
 # FakeHTTP Handoff 06: Safe Continuation
 
-Handoff ID: FH-20260813-06
+Handoff ID: FH-20260814-06
 
 Before continuing, read this file and CODEX_HANDOFF.md. Preserve the current
 FakeHTTP UCI configuration and silent mode unless a coordinated test explicitly
@@ -37,7 +37,7 @@ After this compatibility cycle:
    built for its exact release/architecture is deliberately staged.
 
 The current release assets are `fakehttp-99.2-r11.apk` and
-`luci-app-fakehttp-99.2-r6.apk`; verify their SHA-256 values from
+`luci-app-fakehttp-99.2-r11.apk`; verify their SHA-256 values from
 `CODEX_HANDOFF.md` before installing. The GitHub release is a distribution
 step, not proof of live-router deployment.
 

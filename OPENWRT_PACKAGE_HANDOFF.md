@@ -266,7 +266,7 @@ newer use APK/firewall4; 24.10, 23.05, and 22.03 use IPK/opkg with firewall4;
 outside the release claim.
 
 The current source package revisions are FakeHTTP `99.2-r11` and
-`luci-app-fakehttp 99.2-r6`. FakeHTTP's `DEPENDS` now conditionally selects
+`luci-app-fakehttp 99.2-r11`. FakeHTTP's `DEPENDS` now conditionally selects
 firewall4 nftables packages or firewall3 iptables NFQUEUE/connbytes packages,
 and its build recipe uses `TARGET_STRIP`. LuCI now declares `rpcd-mod-file`
 for its `fs.exec` service controls. The reusable IPK builder is
@@ -277,8 +277,8 @@ SDK IPK packager are under `dist/openwrt-22.03-manual/`:
 
 - `fakehttp_99.2-11_x86_64.ipk`, SHA-256
   `201ba0843fb34b6faaee638ad588b211bc82269f0dadeda90752dc992acd44eb`
-- `luci-app-fakehttp_99.2-6_all.ipk`, SHA-256
-  `39c9c004891f35bda8136ee71a7ce763915d12880c15d51e9da4eb71d2251198`
+- `luci-app-fakehttp_99.2-11_all.ipk`, SHA-256
+  `9742fdf023f7c69dd7c2e3f3b8b1db10b2525536aaf7d18ac96e2a04d75d4568`
 
 The supplied 22.03 SDK's normal package target was not counted as a complete
 pass because its buildbot/all-packages configuration began an unrelated
@@ -289,13 +289,19 @@ live r10 FakeHTTP service and queue 512 were left unchanged.
 The OpenWrt 25.12.5 x86_64 APK release artifacts are also verified locally:
 
 - `fakehttp-99.2-r11.apk`, SHA-256
-  `ab5e96e52dac185abf799128f7800c5155117fb6df43189d29d53e3290843213`
-- `luci-app-fakehttp-99.2-r6.apk`, SHA-256
-  `72855ebc96b79b4d5c0eff13e47b3498fae26192f484254e256cbeed9952ba31`
+  `95877781fba988bde87de7cb7d68824f5d1c4296d6f238a075507ef62da1a415`
+- `luci-app-fakehttp-99.2-r11.apk`, SHA-256
+  `8436c1985c4ec2cc1833ca9ee9a4e0b29a0dabbd19d185b8b849fbf3427fbaa9`
 
 The matching 25.12.5 SDK `apk verify --allow-untrusted` check passed for both
 files. These release artifacts were not installed on the production router in
 this release operation.
+
+## 2026-08-14 Version synchronization
+
+Both package recipes now use `99.2-r11`; no current release artifact uses a
+different LuCI revision. The rebuilt IPK/APK artifacts carry the same revision
+in their embedded metadata and filenames.
 
 That backup included the older package files/config before local package
 replacement.

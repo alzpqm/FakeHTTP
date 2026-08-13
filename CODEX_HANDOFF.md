@@ -14,7 +14,7 @@ reviewed.
   FakeHTTP work unless the user explicitly coordinates a joint window.
 - Router access is through Debian `192.168.9.190` to `192.168.9.1:33501`.
 
-## Verified on 2026-08-11 and 2026-08-13
+## Verified on 2026-08-11, 2026-08-13, and 2026-08-14
 
 - Local worktree was clean before this investigation.
 - Router uptime at 08:10:37 GMT was 6 days, 12:28.
@@ -124,7 +124,7 @@ reviewed.
   space NFQUEUE libraries remain common dependencies.
 - `STRIP` now uses the SDK-provided `TARGET_STRIP`, which is portable across
   the older SDK toolchains reviewed here.
-- `openwrt/luci-app-fakehttp/Makefile` is now `99.2-r6` and declares
+- `openwrt/luci-app-fakehttp/Makefile` is now `99.2-r11` and declares
   `rpcd-mod-file`, required by the LuCI `fs.exec` service controls on minimal
   images.
 - `tools/build-openwrt-ipk.sh` builds both IPK recipes from a matching SDK,
@@ -138,8 +138,8 @@ reviewed.
   containers for both packages:
   `dist/openwrt-22.03-manual/fakehttp_99.2-11_x86_64.ipk` with SHA-256
   `201ba0843fb34b6faaee638ad588b211bc82269f0dadeda90752dc992acd44eb`, and
-  `dist/openwrt-22.03-manual/luci-app-fakehttp_99.2-6_all.ipk` with SHA-256
-  `39c9c004891f35bda8136ee71a7ce763915d12880c15d51e9da4eb71d2251198`.
+  `dist/openwrt-22.03-manual/luci-app-fakehttp_99.2-11_all.ipk` with SHA-256
+  `9742fdf023f7c69dd7c2e3f3b8b1db10b2525536aaf7d18ac96e2a04d75d4568`.
 - The 22.03 SDK's normal package target was not claimed as a complete build:
   its existing buildbot/all-packages configuration began an unrelated
   281 MB Linux firmware build before FakeHTTP packaging, so that attempt was
@@ -151,11 +151,20 @@ reviewed.
   FakeHTTP r10 silent runtime. Queue 512 was not touched by this work, and
   queue 513/FakeSIP was not read or modified.
 - The 25.12.5 APK builder produced `fakehttp-99.2-r11.apk` with SHA-256
-  `ab5e96e52dac185abf799128f7800c5155117fb6df43189d29d53e3290843213` and
-  `luci-app-fakehttp-99.2-r6.apk` with SHA-256
-  `72855ebc96b79b4d5c0eff13e47b3498fae26192f484254e256cbeed9952ba31`.
+  `95877781fba988bde87de7cb7d68824f5d1c4296d6f238a075507ef62da1a415` and
+  `luci-app-fakehttp-99.2-r11.apk` with SHA-256
+  `8436c1985c4ec2cc1833ca9ee9a4e0b29a0dabbd19d185b8b849fbf3427fbaa9`.
   SDK `apk verify --allow-untrusted` passed for both artifacts, and the
   extracted data contains the expected binary, init/UCI, LuCI, and ACL files.
+
+## 2026-08-14 Version synchronization
+
+- Both OpenWrt recipes now use package revision `99.2-r11`.
+- The 22.03 IPK and 25.12 APK artifacts were rebuilt so their embedded
+  package versions and filenames are synchronized for FakeHTTP and LuCI.
+- The release update does not install anything on the production router. The
+  live router remains on FakeHTTP r10 silent mode, and queue 512 was not
+  modified. FakeSIP and queue 513 were not read or modified.
 
 - A direct test command accidentally ran on macOS first. It failed because
   this project requires Linux headers/libraries and Apple Clang does not

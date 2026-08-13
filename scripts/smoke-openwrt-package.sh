@@ -26,9 +26,11 @@ grep -q '+PACKAGE_firewall4:kmod-nft-queue' openwrt/fakehttp/Makefile
 grep -q '+PACKAGE_firewall:iptables-mod-nfqueue' openwrt/fakehttp/Makefile
 grep -q '+PACKAGE_firewall:iptables-mod-conntrack-extra' openwrt/fakehttp/Makefile
 grep -q 'STRIP="$(TARGET_STRIP)"' openwrt/fakehttp/Makefile
+grep -q '^PKG_RELEASE:=11$' openwrt/fakehttp/Makefile
 grep -q "Package/luci-app-fakehttp" openwrt/luci-app-fakehttp/Makefile
 grep -q 'DEPENDS:=+fakehttp +luci-base +rpcd-mod-file' \
 	openwrt/luci-app-fakehttp/Makefile
+grep -q '^PKG_RELEASE:=11$' openwrt/luci-app-fakehttp/Makefile
 grep -q "/etc/init.d/fakehttp restart" openwrt/fakehttp/Makefile
 grep -q 'remove|deinstall|uninstall)' openwrt/fakehttp/Makefile
 grep -q "config globals 'globals'" "$ROOT/etc/config/fakehttp"

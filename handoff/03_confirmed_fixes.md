@@ -1,6 +1,6 @@
 # FakeHTTP Handoff 03: Confirmed Fixes
 
-Handoff ID: FH-20260813-03
+Handoff ID: FH-20260814-03
 
 Confirmed finding 1: the old nfqueue loop treated only a negative
 nfq_handle_packet result as failure. The r9 patch treats every non-zero result
@@ -26,7 +26,7 @@ OpenWrt compatibility fixes completed in source on 2026-08-13:
 
 - FakeHTTP package `99.2-r11` uses conditional firewall4 and firewall3
   dependency groups and the SDK variable `TARGET_STRIP`.
-- LuCI package `99.2-r6` declares `rpcd-mod-file` for `fs.exec` controls.
+- LuCI package `99.2-r11` declares `rpcd-mod-file` for `fs.exec` controls.
 - The compatibility helper is `tools/build-openwrt-ipk.sh`.
 
 No compatibility change was installed on the production router. The live
@@ -35,9 +35,9 @@ router remains on r10 and the current service remains silent.
 Release artifacts built from this source:
 
 - `fakehttp-99.2-r11.apk`: SHA-256
-  `ab5e96e52dac185abf799128f7800c5155117fb6df43189d29d53e3290843213`
-- `luci-app-fakehttp-99.2-r6.apk`: SHA-256
-  `72855ebc96b79b4d5c0eff13e47b3498fae26192f484254e256cbeed9952ba31`
+  `95877781fba988bde87de7cb7d68824f5d1c4296d6f238a075507ef62da1a415`
+- `luci-app-fakehttp-99.2-r11.apk`: SHA-256
+  `8436c1985c4ec2cc1833ca9ee9a4e0b29a0dabbd19d185b8b849fbf3427fbaa9`
 
 They were verified by the matching 25.12.5 SDK and held as release assets;
 router installation remains a separate step.

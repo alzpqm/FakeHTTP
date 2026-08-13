@@ -1,6 +1,6 @@
 # FakeHTTP Handoff 02: Live Audit Evidence
 
-Handoff ID: FH-20260813-02
+Handoff ID: FH-20260814-02
 Audit window: 2026-08-13 05:15:32 to 05:16:33 UTC.
 
 Two read-only snapshots showed:
@@ -29,8 +29,8 @@ Verified build artifacts from the OpenWrt 22.03 toolchain:
 
 - `fakehttp_99.2-11_x86_64.ipk`: SHA-256
   `201ba0843fb34b6faaee638ad588b211bc82269f0dadeda90752dc992acd44eb`
-- `luci-app-fakehttp_99.2-6_all.ipk`: SHA-256
-  `39c9c004891f35bda8136ee71a7ce763915d12880c15d51e9da4eb71d2251198`
+- `luci-app-fakehttp_99.2-11_all.ipk`: SHA-256
+  `9742fdf023f7c69dd7c2e3f3b8b1db10b2525536aaf7d18ac96e2a04d75d4568`
 
 These were built by the 22.03 GCC 11/musl cross-toolchain and assembled with
 the SDK `ipkg-build` script. The supplied SDK's full package target was not
@@ -40,8 +40,8 @@ build.
 The matching 25.12.5 APK artifacts were also verified:
 
 - `fakehttp-99.2-r11.apk`: SHA-256
-  `ab5e96e52dac185abf799128f7800c5155117fb6df43189d29d53e3290843213`
-- `luci-app-fakehttp-99.2-r6.apk`: SHA-256
-  `72855ebc96b79b4d5c0eff13e47b3498fae26192f484254e256cbeed9952ba31`
+  `95877781fba988bde87de7cb7d68824f5d1c4296d6f238a075507ef62da1a415`
+- `luci-app-fakehttp-99.2-r11.apk`: SHA-256
+  `8436c1985c4ec2cc1833ca9ee9a4e0b29a0dabbd19d185b8b849fbf3427fbaa9`
 
 The SDK `apk verify --allow-untrusted` check passed for both.

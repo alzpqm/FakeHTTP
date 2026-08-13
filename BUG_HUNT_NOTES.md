@@ -654,14 +654,14 @@ series remain outside the release claim.
 ## 2026-08-13 OpenWrt 25.12 r11 release artifacts
 
 The 25.12 version was advanced together with the pre-25 compatibility work:
-FakeHTTP is `99.2-r11` and LuCI is `99.2-r6`. A reproducible
+FakeHTTP is `99.2-r11` and LuCI is `99.2-r11`. A reproducible
 `tools/build-openwrt-apk.sh` helper now builds these APKs from the matching
 OpenWrt 25.12 SDK.
 
 - `fakehttp-99.2-r11.apk` SHA-256:
   `ab5e96e52dac185abf799128f7800c5155117fb6df43189d29d53e3290843213`
-- `luci-app-fakehttp-99.2-r6.apk` SHA-256:
-  `72855ebc96b79b4d5c0eff13e47b3498fae26192f484254e256cbeed9952ba31`
+- `luci-app-fakehttp-99.2-r11.apk` SHA-256:
+  `8436c1985c4ec2cc1833ca9ee9a4e0b29a0dabbd19d185b8b849fbf3427fbaa9`
 - SDK `apk verify --allow-untrusted` passed for both artifacts.
 - The package contents were extracted and checked for the binary, init/UCI,
   LuCI JavaScript, ACL, and menu files.
@@ -669,3 +669,9 @@ OpenWrt 25.12 SDK.
 No release APK was installed on the production router. Its deployed FakeHTTP
 service remains r10 in silent mode; queue 512 was not modified, and queue 513
 was not read or modified.
+
+## 2026-08-14 Version synchronization
+
+The FakeHTTP and LuCI OpenWrt recipes now both use package revision `99.2-r11`.
+The rebuilt 22.03 IPK and 25.12 APK artifacts carry the same revision in their
+embedded metadata and filenames. No router installation was performed.

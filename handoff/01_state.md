@@ -1,6 +1,6 @@
 # FakeHTTP Handoff 01: Current State
 
-Handoff ID: FH-20260813-01
+Handoff ID: FH-20260814-01
 Repository: /Users/sirtungshenghsiao/Documents/fakehttp
 Branch: codex/input-validation
 Scope: FakeHTTP and NFQUEUE 512 only.
@@ -21,10 +21,10 @@ full 48-hour proof.
 Do not claim a speed improvement from this handoff. No speed test was run in
 this audit.
 
-Compatibility work completed on 2026-08-13:
+Compatibility work completed on 2026-08-13 and synchronized on 2026-08-14:
 
 - Source package revision is FakeHTTP `99.2-r11`; LuCI package revision is
-  `99.2-r6`. These revisions were not installed on the production router.
+  `99.2-r11`. These revisions were not installed on the production router.
 - Claimed release range is OpenWrt 21.02 through 25.12. OpenWrt 19.07 and
   older remain unclaimed.
 - The package recipe now conditionally selects firewall4/nftables or
@@ -32,5 +32,5 @@ Compatibility work completed on 2026-08-13:
 - No live FakeHTTP queue 512 or FakeSIP queue 513 operation was performed for
   this compatibility work.
 - The 25.12 release artifacts are `fakehttp-99.2-r11.apk` and
-  `luci-app-fakehttp-99.2-r6.apk`; they were built and verified but not
+  `luci-app-fakehttp-99.2-r11.apk`; they were built and verified but not
   installed on the production router.

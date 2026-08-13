@@ -1,6 +1,6 @@
 # FakeHTTP Handoff 05: Evidence Limits
 
-Handoff ID: FH-20260813-05
+Handoff ID: FH-20260814-05
 
 The current evidence supports these claims only:
 
@@ -34,6 +34,6 @@ Compatibility limits:
 - No pre-25 package was installed on the production router. Do not report
   pre-25 runtime service behavior as field-verified.
 - The new 25.12 APKs were built and verified but were not installed on the
-  production router. Do not report r11/r6 as the live router version.
+  production router. Do not report r11 as the live router version.
 - OpenWrt 19.07 and older, firewall variants outside the listed defaults, and
   unusual LuCI images without the matching rpcd feed remain unverified.
