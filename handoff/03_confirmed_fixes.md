@@ -29,15 +29,19 @@ OpenWrt compatibility fixes completed in source on 2026-08-13:
 - LuCI package `99.2-r11` declares `rpcd-mod-file` for `fs.exec` controls.
 - The compatibility helper is `tools/build-openwrt-ipk.sh`.
 
-No compatibility change was installed on the production router. The live
-router remains on r10 and the current service remains silent.
+The compatibility packages were installed on the production router on
+2026-08-13 UTC. The live service is now r11 and silent after validation.
 
 Release artifacts built from this source:
 
 - `fakehttp-99.2-r11.apk`: SHA-256
-  `95877781fba988bde87de7cb7d68824f5d1c4296d6f238a075507ef62da1a415`
+  `1bee2dfcf66217d341f637f1f55c87caa54856c27065b4baf632395ae40348f2`
 - `luci-app-fakehttp-99.2-r11.apk`: SHA-256
-  `8436c1985c4ec2cc1833ca9ee9a4e0b29a0dabbd19d185b8b849fbf3427fbaa9`
+  `5bb359b60b65fb30d23e6abb698f3751702036ededa10be46d2d904130b1e5d2`
 
-They were verified by the matching 25.12.5 SDK and held as release assets;
-router installation remains a separate step.
+They were verified by the matching 25.12.5 SDK and installed on the matching
+router.
+
+The first LuCI APK was rejected because the custom builder encoded `arch: all`.
+The builder now uses the target SDK architecture for LuCI, and the corrected
+`x86_64` package installed successfully.

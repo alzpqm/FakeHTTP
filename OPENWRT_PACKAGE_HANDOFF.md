@@ -283,25 +283,46 @@ SDK IPK packager are under `dist/openwrt-22.03-manual/`:
 The supplied 22.03 SDK's normal package target was not counted as a complete
 pass because its buildbot/all-packages configuration began an unrelated
 Linux firmware download. The binary cross-compile and SDK IPK assembly did
-pass. No compatibility package was installed on the production router; the
-live r10 FakeHTTP service and queue 512 were left unchanged.
+pass. At the time of this pre-25 build audit, no compatibility package was
+installed on the production router; the later r11 deployment is recorded below.
 
 The OpenWrt 25.12.5 x86_64 APK release artifacts are also verified locally:
 
 - `fakehttp-99.2-r11.apk`, SHA-256
-  `95877781fba988bde87de7cb7d68824f5d1c4296d6f238a075507ef62da1a415`
+  `1bee2dfcf66217d341f637f1f55c87caa54856c27065b4baf632395ae40348f2`
 - `luci-app-fakehttp-99.2-r11.apk`, SHA-256
-  `8436c1985c4ec2cc1833ca9ee9a4e0b29a0dabbd19d185b8b849fbf3427fbaa9`
+  `5bb359b60b65fb30d23e6abb698f3751702036ededa10be46d2d904130b1e5d2`
 
 The matching 25.12.5 SDK `apk verify --allow-untrusted` check passed for both
-files. These release artifacts were not installed on the production router in
-this release operation.
+files. Installation and runtime validation were performed later and are
+recorded below.
 
 ## 2026-08-14 Version synchronization
 
 Both package recipes now use `99.2-r11`; no current release artifact uses a
 different LuCI revision. The rebuilt IPK/APK artifacts carry the same revision
-in their embedded metadata and filenames.
+in their embedded metadata and filenames. The APK builder uses the target
+architecture for both APKs, including LuCI, because OpenWrt 25.12 records the
+installed LuCI package as `x86_64` rather than `all`.
+
+## 2026-08-14 OpenWrt 25.12 installation and non-silent test
+
+The corrected `99.2-r11` x86_64 APKs were installed on the OpenWrt 25.12.5
+router through Debian `192.168.9.190`. The previous r10 binary and UCI files
+were backed up at `/root/fakehttp-upgrade-backup-20260814-r11`.
+
+The non-silent window ran from `2026-08-13 17:53:34` to `18:23:36 UTC`.
+There were 30/30 samples on PID `8477`, RSS `860-928 kB`, VmSize `1152 kB`,
+one thread, and five FDs. Queue512 backlog/kernel/user drop was `0/0/0` in
+all 30 samples, and all three PPPoE interfaces kept zero rx/tx errors and
+drops. The captured follow log has 22,614 lines; the targeted FakeHTTP error
+search had no matches. Silent mode was restored afterward; final PID was
+`20449`, with `silent=1`, service running, and queue512 `0/0/0`.
+
+The archived test evidence is stored locally at
+`/tmp/fakehttp-runtime-audit-20260814/fakehttp-r11-nonsilent-20260814.tar.gz`
+and has SHA-256
+`9ac4e3d311ae86fe5320b7a883742c549b605b77adab4c49cfb5a167b79f58b6`.
 
 That backup included the older package files/config before local package
 replacement.

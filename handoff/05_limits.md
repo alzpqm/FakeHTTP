@@ -10,6 +10,8 @@ The current evidence supports these claims only:
   were stable and healthy.
 - No current FakeHTTP or dmesg anomaly matched the audit filters.
 - The r9 and r10 error-path fixes pass their Linux regression tests.
+- The corrected r11 packages passed one matching OpenWrt 25.12.5 x86_64
+  install and a 30-minute non-silent runtime validation.
 
 The evidence does not prove:
 
@@ -33,7 +35,8 @@ Compatibility limits:
   supplied SDK was configured to build unrelated firmware packages.
 - No pre-25 package was installed on the production router. Do not report
   pre-25 runtime service behavior as field-verified.
-- The new 25.12 APKs were built and verified but were not installed on the
-  production router. Do not report r11 as the live router version.
+- The 25.12 APKs were installed on the matching x86_64 router and the live
+  service is now r11 silent. Do not generalize this runtime result to other
+  targets or OpenWrt releases without their own install test.
 - OpenWrt 19.07 and older, firewall variants outside the listed defaults, and
   unusual LuCI images without the matching rpcd feed remain unverified.

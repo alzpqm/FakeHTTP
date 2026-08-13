@@ -38,17 +38,27 @@ unrelated Linux firmware download and the attempt was stopped.
 OpenWrt 25.12.5 APK verification:
 
 - APK build from the GCC 14/musl SDK: passed after fixing the builder's
-  temporary `/usr/sbin` directory creation.
+  temporary `/usr/sbin` directory creation and LuCI target-architecture field.
 - SDK `apk verify --allow-untrusted` for both APKs: passed.
 - APK extraction showed the expected daemon, service/UCI files, LuCI view,
   ACL, and menu files.
 - `fakehttp-99.2-r11.apk` SHA-256:
-  `95877781fba988bde87de7cb7d68824f5d1c4296d6f238a075507ef62da1a415`.
+  `1bee2dfcf66217d341f637f1f55c87caa54856c27065b4baf632395ae40348f2`.
 - `luci-app-fakehttp-99.2-r11.apk` SHA-256:
-  `8436c1985c4ec2cc1833ca9ee9a4e0b29a0dabbd19d185b8b849fbf3427fbaa9`.
+  `5bb359b60b65fb30d23e6abb698f3751702036ededa10be46d2d904130b1e5d2`.
 
 Version synchronization on 2026-08-14:
 
 - Both OpenWrt Makefiles declare `PKG_VERSION:=99.2` and `PKG_RELEASE:=11`.
 - The rebuilt 22.03 LuCI IPK control metadata reports `Version: 99.2-11`.
 - The rebuilt 25.12 APKs passed SDK verification and use `99.2-r11` filenames.
+
+OpenWrt 25.12.5 runtime validation on 2026-08-14:
+
+- Corrected FakeHTTP and LuCI APKs installed successfully as `x86_64`.
+- A 30-minute non-silent test produced 30/30 samples on one PID. RSS was
+  `860-928 kB`, VmSize `1152 kB`, one thread, and five FDs.
+- Queue512 backlog/kernel/user drop was `0/0/0` in all samples. All three
+  PPPoE interfaces had zero rx/tx errors and drops in all samples.
+- The captured follow log had 22,614 lines; the targeted FakeHTTP error search
+  returned no matches. Silent mode was restored after the test.

@@ -648,8 +648,8 @@ series remain outside the release claim.
   target was not claimed because the supplied SDK's buildbot/all-packages
   configuration began an unrelated Linux firmware download and was stopped.
 - OpenWrt 25.12.5's GCC 14/musl cross-toolchain also compiled the current
-  source. No pre-25 package was installed on the production router in this
-  task; the live r10 service and queue 512 were left unchanged.
+  source. No pre-25 package was installed during this compatibility-only
+  audit; the later r11 deployment is recorded below.
 
 ## 2026-08-13 OpenWrt 25.12 r11 release artifacts
 
@@ -659,19 +659,33 @@ FakeHTTP is `99.2-r11` and LuCI is `99.2-r11`. A reproducible
 OpenWrt 25.12 SDK.
 
 - `fakehttp-99.2-r11.apk` SHA-256:
-  `ab5e96e52dac185abf799128f7800c5155117fb6df43189d29d53e3290843213`
+  `1bee2dfcf66217d341f637f1f55c87caa54856c27065b4baf632395ae40348f2`
 - `luci-app-fakehttp-99.2-r11.apk` SHA-256:
-  `8436c1985c4ec2cc1833ca9ee9a4e0b29a0dabbd19d185b8b849fbf3427fbaa9`
+  `5bb359b60b65fb30d23e6abb698f3751702036ededa10be46d2d904130b1e5d2`
 - SDK `apk verify --allow-untrusted` passed for both artifacts.
 - The package contents were extracted and checked for the binary, init/UCI,
   LuCI JavaScript, ACL, and menu files.
 
-No release APK was installed on the production router. Its deployed FakeHTTP
-service remains r10 in silent mode; queue 512 was not modified, and queue 513
-was not read or modified.
+At the time of this release-artifact audit no APK had been installed on the
+production router. The later r11 installation and runtime validation are
+recorded below; queue 513 was not read or modified.
 
 ## 2026-08-14 Version synchronization
 
 The FakeHTTP and LuCI OpenWrt recipes now both use package revision `99.2-r11`.
 The rebuilt 22.03 IPK and 25.12 APK artifacts carry the same revision in their
-embedded metadata and filenames. No router installation was performed.
+embedded metadata and filenames. The APK builder now encodes the target
+architecture for both packages; using `arch: all` for LuCI was rejected by the
+OpenWrt 25.12 APK solver and is a confirmed packaging bug fixed before the
+successful install.
+
+## 2026-08-14 r11 non-silent runtime validation
+
+The corrected r11 core and LuCI APKs were installed on OpenWrt 25.12.5 x86_64.
+A 30-minute non-silent window ran from `17:53:34` to `18:23:36 UTC` with 30
+samples on one PID, RSS `860-928 kB`, VmSize `1152 kB`, one thread, and five
+FDs. Queue512 backlog/kernel/user drop remained `0/0/0` in every sample, and
+all three WAN error/drop counters remained zero. The captured log contained
+22,614 lines and the targeted FakeHTTP error search returned no matches.
+Silent mode was restored after the test; the final service was running on PID
+`20449` with `silent=1` and queue512 `0/0/0`.

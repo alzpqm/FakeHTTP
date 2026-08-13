@@ -106,6 +106,10 @@ apk add --allow-untrusted /tmp/fakehttp-*.apk
 apk add --allow-untrusted /tmp/luci-app-fakehttp-*.apk
 ```
 
+The APK helper uses the SDK target architecture for both packages, including
+the LuCI package. OpenWrt's APK database records installed LuCI packages with
+the target architecture rather than the source recipe's `PKGARCH:=all` value.
+
 ## Configure and run
 
 Open `Services -> FakeHTTP` in LuCI after installing

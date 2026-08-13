@@ -159,7 +159,7 @@ chown -R 0:0 "$FAKEHTTP_ROOT" "$LUCI_ROOT"
     --info "name:luci-app-fakehttp" \
     --info "version:$LUCI_VERSION-r$LUCI_RELEASE" \
     --info "description:LuCI support for FakeHTTP" \
-    --info "arch:all" \
+    --info "arch:$ARCH" \
     --info "license:GPL-3.0-or-later" \
     --info "origin:feeds/base/luci-app-fakehttp" \
     --info "url:https://github.com/MikeWang000000/FakeHTTP" \

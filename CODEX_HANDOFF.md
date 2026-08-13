@@ -14,6 +14,16 @@ reviewed.
   FakeHTTP work unless the user explicitly coordinates a joint window.
 - Router access is through Debian `192.168.9.190` to `192.168.9.1:33501`.
 
+## Current live state on 2026-08-14
+
+- The router runs FakeHTTP `99.2-r11` in silent mode, PID `20449`, with the
+  original payload configuration and three PPPoE interfaces.
+- LuCI package `99.2-r11` is installed on the same OpenWrt 25.12.5 x86_64
+  router. The 30-minute non-silent validation completed and silent mode was
+  restored.
+- Queue512 is owned by PID `20449` with backlog/kernel/user drop `0/0/0` in
+  the final check. FakeSIP and queue513 were not read or modified.
+
 ## Verified on 2026-08-11, 2026-08-13, and 2026-08-14
 
 - Local worktree was clean before this investigation.
@@ -146,14 +156,13 @@ reviewed.
   stopped. The verified 22.03 result is therefore cross-compilation plus SDK
   IPK assembly, not a complete clean dependency-graph build.
 - A separate OpenWrt 25.12.5 x86_64 SDK cross-toolchain also compiled the
-  current source successfully. No new package was installed on the router in
-  this compatibility task; the router remains on the previously installed
-  FakeHTTP r10 silent runtime. Queue 512 was not touched by this work, and
-  queue 513/FakeSIP was not read or modified.
+  current source successfully. At the time of this 2026-08-13 compatibility
+  audit, no new package was installed on the router; the live install was
+  updated later in the 2026-08-14 deployment test below.
 - The 25.12.5 APK builder produced `fakehttp-99.2-r11.apk` with SHA-256
-  `95877781fba988bde87de7cb7d68824f5d1c4296d6f238a075507ef62da1a415` and
+  `1bee2dfcf66217d341f637f1f55c87caa54856c27065b4baf632395ae40348f2` and
   `luci-app-fakehttp-99.2-r11.apk` with SHA-256
-  `8436c1985c4ec2cc1833ca9ee9a4e0b29a0dabbd19d185b8b849fbf3427fbaa9`.
+  `5bb359b60b65fb30d23e6abb698f3751702036ededa10be46d2d904130b1e5d2`.
   SDK `apk verify --allow-untrusted` passed for both artifacts, and the
   extracted data contains the expected binary, init/UCI, LuCI, and ACL files.
 
@@ -162,9 +171,40 @@ reviewed.
 - Both OpenWrt recipes now use package revision `99.2-r11`.
 - The 22.03 IPK and 25.12 APK artifacts were rebuilt so their embedded
   package versions and filenames are synchronized for FakeHTTP and LuCI.
-- The release update does not install anything on the production router. The
-  live router remains on FakeHTTP r10 silent mode, and queue 512 was not
-  modified. FakeSIP and queue 513 were not read or modified.
+- The release preparation did not install packages at that stage. The
+  2026-08-14 deployment test below installed them on the production router;
+  queue 512 was changed only by the service restart. FakeSIP and queue 513
+  were not read or modified.
+
+## 2026-08-14 Live r11 deployment and 30-minute non-silent test
+
+- The router is OpenWrt 25.12.5 x86_64. Before installation it ran FakeHTTP
+  `99.2-r10`, PID `4858`, silent mode, with queue512 `0/0/0` backlog/kernel
+  drop/user drop. The r10 binary and UCI files were backed up under
+  `/root/fakehttp-upgrade-backup-20260814-r11`.
+- The first LuCI APK attempt exposed a real packaging defect: the custom APK
+  builder encoded the LuCI package as `arch: all`, while the OpenWrt 25.12 APK
+  database requires the target architecture for this installed package. The
+  builder now uses `--info "arch:$ARCH"` for both packages. Rebuilt APKs passed
+  SDK verification, and the corrected LuCI APK installed successfully.
+- Final installed package metadata reports FakeHTTP `99.2-r11 x86_64` and
+  LuCI `99.2-r11 x86_64`. The final FakeHTTP binary SHA-256 is
+  `12405e223928d800aaf52b78a839f803b2f05a8126b7e4542b26d7469911fef5`.
+- Non-silent window: `2026-08-13 17:53:34` to `18:23:36 UTC` (30 minutes).
+  Debian generated 30 small HTTPS requests; all completed with HTTP 501 from
+  the endpoint, with no request timeout. The test had one PID (`8477`) for all
+  30 samples, RSS `860-928 kB`, VmSize `1152 kB`, one thread, and five FDs.
+- All 30 queue512 samples had backlog/kernel drop/user drop `0/0/0`; all 30
+  samples had zero rx/tx errors and drops on `pppoe-wan2`, `pppoe-wancm`, and
+  `pppoe-wanct`. The follow log contained `22614` lines, including `22327`
+  FakeHTTP runtime lines; the targeted error-pattern search returned no
+  matches.
+- Silent mode was restored and committed after the test. Final state was
+  service running, `silent=1`, PID `20449`, queue512 `0/0/0`, RSS `836 kB`,
+  one thread, and five FDs. FakeSIP/queue513 was not read or modified.
+- The preserved runtime archive is
+  `/tmp/fakehttp-runtime-audit-20260814/fakehttp-r11-nonsilent-20260814.tar.gz`
+  with SHA-256 `9ac4e3d311ae86fe5320b7a883742c549b605b77adab4c49cfb5a167b79f58b6`.
 
 - A direct test command accidentally ran on macOS first. It failed because
   this project requires Linux headers/libraries and Apple Clang does not
@@ -209,11 +249,12 @@ reviewed.
 
 ## Next steps
 
-1. Keep r10 in silent production mode and collect a scheduled multi-hour or
+1. Keep r11 in silent production mode and collect a scheduled multi-hour or
    24-hour RSS/FD/queue512 trend before making a stronger long-term leak claim.
 2. If a controlled download is run, inspect any new `nfq_handle_packet()` line
    for its result/length/errno data; do not infer a speed conclusion from the
    absence of an error line.
-3. Keep the r10 APK and pre-install backups until rollback is no longer needed.
+3. Keep the r11 APK and `/root/fakehttp-upgrade-backup-20260814-r11` until
+   rollback is no longer needed.
 4. Before every context compaction and at the end of every research cycle,
    update this file and the six files under `handoff/`.
