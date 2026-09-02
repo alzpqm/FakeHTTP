@@ -1,0 +1,31 @@
+{
+	"luci-app-fakehttp": {
+		"description": "Grant access to FakeHTTP configuration",
+		"read": {
+			"file": {
+				"/etc/init.d/fakehttp status": [
+					"exec"
+				]
+			},
+			"uci": [
+				"fakehttp"
+			]
+		},
+		"write": {
+			"file": {
+				"/etc/init.d/fakehttp start": [
+					"exec"
+				],
+				"/etc/init.d/fakehttp restart": [
+					"exec"
+				],
+				"/etc/init.d/fakehttp stop": [
+					"exec"
+				]
+			},
+			"uci": [
+				"fakehttp"
+			]
+		}
+	}
+}
