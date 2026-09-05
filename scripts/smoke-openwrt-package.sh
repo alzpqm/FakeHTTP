@@ -26,12 +26,12 @@ grep -q '+PACKAGE_firewall4:kmod-nft-queue' openwrt/fakehttp/Makefile
 grep -q '+PACKAGE_firewall:iptables-mod-nfqueue' openwrt/fakehttp/Makefile
 grep -q '+PACKAGE_firewall:iptables-mod-conntrack-extra' openwrt/fakehttp/Makefile
 grep -q 'STRIP="$(TARGET_STRIP)"' openwrt/fakehttp/Makefile
-grep -q '^PKG_RELEASE:=13$' openwrt/fakehttp/Makefile
+grep -q '^PKG_RELEASE:=14$' openwrt/fakehttp/Makefile
 grep -q -- '--info "arch:$ARCH"' tools/build-openwrt-apk.sh
 grep -q "Package/luci-app-fakehttp" openwrt/luci-app-fakehttp/Makefile
 grep -q 'DEPENDS:=+fakehttp +luci-base +rpcd-mod-file' \
 	openwrt/luci-app-fakehttp/Makefile
-grep -q '^PKG_RELEASE:=13$' openwrt/luci-app-fakehttp/Makefile
+grep -q '^PKG_RELEASE:=14$' openwrt/luci-app-fakehttp/Makefile
 grep -q "/etc/init.d/fakehttp restart" openwrt/fakehttp/Makefile
 grep -q 'remove|deinstall|uninstall)' openwrt/fakehttp/Makefile
 grep -q "config globals 'globals'" "$ROOT/etc/config/fakehttp"
@@ -61,6 +61,9 @@ grep -q "data-action': 'start'" \
 grep -q "fakehttp-setup" openwrt/README.md
 grep -q "build-openwrt-apk.sh" openwrt/README.md
 grep -q '/etc/init.d/fakehttp restart' tools/build-openwrt-apk.sh
+grep -q 'export PKG_UPGRADE=1' tools/build-openwrt-apk.sh
+grep -q 'post-upgrade:$FAKEHTTP_SCRIPTS/post-upgrade' tools/build-openwrt-apk.sh
+grep -q 'post-upgrade:$LUCI_SCRIPTS/post-upgrade' tools/build-openwrt-apk.sh
 ! openwrt/fakehttp/files/usr/sbin/fakehttp-setup "bad'host" wan >/dev/null 2>&1
 ! openwrt/fakehttp/files/usr/sbin/fakehttp-setup example.com "bad'iface" >/dev/null 2>&1
 

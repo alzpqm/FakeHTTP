@@ -23,8 +23,8 @@ This compatibility work is intended for OpenWrt 21.02 through 25.12. The
 19.07 and older series are end-of-life and are not release-claimed until they
 receive a separate toolchain and LuCI validation pass.
 
-The current package revisions are `fakehttp 99.2-r13` and
-`luci-app-fakehttp 99.2-r13`.
+The current package revisions are `fakehttp 99.2-r14` and
+`luci-app-fakehttp 99.2-r14`.
 
 ## Build IPK packages for OpenWrt 24.10 and older
 

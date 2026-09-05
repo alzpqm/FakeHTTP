@@ -124,6 +124,12 @@ make_script_metadata() {
             '}' \
             >>"$dir/post-install"
     fi
+
+    {
+        printf '%s\n' '#!/bin/sh' 'export PKG_UPGRADE=1'
+        sed '/^[[:space:]]*#!/d' "$dir/post-install"
+    } >"$dir/post-upgrade"
+
     printf '%s\n' \
         '#!/bin/sh' \
         '[ -s "${IPKG_INSTROOT:-}/lib/functions.sh" ] || exit 0' \
@@ -132,7 +138,7 @@ make_script_metadata() {
         "export pkgname=\"$package\"" \
         'default_prerm' \
         >"$dir/pre-deinstall"
-    chmod 0755 "$dir/post-install" "$dir/pre-deinstall"
+    chmod 0755 "$dir/post-install" "$dir/post-upgrade" "$dir/pre-deinstall"
 }
 
 make_conffile_metadata "$FAKEHTTP_ROOT" fakehttp /etc/config/fakehttp
@@ -160,6 +166,7 @@ chown -R 0:0 "$FAKEHTTP_ROOT" "$LUCI_ROOT"
     --info "provides:fakehttp-any" \
     --info "depends:libc libnetfilter-queue1 libnfnetlink0 libmnl0 kmod-nfnetlink-queue kmod-nft-queue nftables-json" \
     --script "post-install:$FAKEHTTP_SCRIPTS/post-install" \
+    --script "post-upgrade:$FAKEHTTP_SCRIPTS/post-upgrade" \
     --script "pre-deinstall:$FAKEHTTP_SCRIPTS/pre-deinstall" \
     --files "$FAKEHTTP_ROOT" \
     --output "$OUT_DIR/fakehttp-$FAKEHTTP_VERSION-r$FAKEHTTP_RELEASE.apk"
@@ -175,6 +182,7 @@ chown -R 0:0 "$FAKEHTTP_ROOT" "$LUCI_ROOT"
     --info "maintainer:FakeHTTP maintainers" \
     --info "depends:fakehttp luci-base rpcd-mod-file" \
     --script "post-install:$LUCI_SCRIPTS/post-install" \
+    --script "post-upgrade:$LUCI_SCRIPTS/post-upgrade" \
     --script "pre-deinstall:$LUCI_SCRIPTS/pre-deinstall" \
     --files "$LUCI_ROOT" \
     --output "$OUT_DIR/luci-app-fakehttp-$LUCI_VERSION-r$LUCI_RELEASE.apk"
