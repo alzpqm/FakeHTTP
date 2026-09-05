@@ -26,12 +26,12 @@ grep -q '+PACKAGE_firewall4:kmod-nft-queue' openwrt/fakehttp/Makefile
 grep -q '+PACKAGE_firewall:iptables-mod-nfqueue' openwrt/fakehttp/Makefile
 grep -q '+PACKAGE_firewall:iptables-mod-conntrack-extra' openwrt/fakehttp/Makefile
 grep -q 'STRIP="$(TARGET_STRIP)"' openwrt/fakehttp/Makefile
-grep -q '^PKG_RELEASE:=12$' openwrt/fakehttp/Makefile
+grep -q '^PKG_RELEASE:=13$' openwrt/fakehttp/Makefile
 grep -q -- '--info "arch:$ARCH"' tools/build-openwrt-apk.sh
 grep -q "Package/luci-app-fakehttp" openwrt/luci-app-fakehttp/Makefile
 grep -q 'DEPENDS:=+fakehttp +luci-base +rpcd-mod-file' \
 	openwrt/luci-app-fakehttp/Makefile
-grep -q '^PKG_RELEASE:=12$' openwrt/luci-app-fakehttp/Makefile
+grep -q '^PKG_RELEASE:=13$' openwrt/luci-app-fakehttp/Makefile
 grep -q "/etc/init.d/fakehttp restart" openwrt/fakehttp/Makefile
 grep -q 'remove|deinstall|uninstall)' openwrt/fakehttp/Makefile
 grep -q "config globals 'globals'" "$ROOT/etc/config/fakehttp"
@@ -60,9 +60,13 @@ grep -q "data-action': 'start'" \
 	openwrt/luci-app-fakehttp/htdocs/luci-static/resources/view/fakehttp.js
 grep -q "fakehttp-setup" openwrt/README.md
 grep -q "build-openwrt-apk.sh" openwrt/README.md
+grep -q '/etc/init.d/fakehttp restart' tools/build-openwrt-apk.sh
+! openwrt/fakehttp/files/usr/sbin/fakehttp-setup "bad'host" wan >/dev/null 2>&1
+! openwrt/fakehttp/files/usr/sbin/fakehttp-setup example.com "bad'iface" >/dev/null 2>&1
 
 json_pp < openwrt/luci-app-fakehttp/root/usr/share/luci/menu.d/luci-app-fakehttp.json >/dev/null
 json_pp < openwrt/luci-app-fakehttp/root/usr/share/rpcd/acl.d/luci-app-fakehttp.json >/dev/null
 node --check openwrt/luci-app-fakehttp/htdocs/luci-static/resources/view/fakehttp.js >/dev/null
+node tests/test-luci-view.js
 
 echo "OpenWrt package smoke test passed."

@@ -9,6 +9,67 @@
 var serviceBusy = false;
 var serviceReadonly = true;
 
+var pageStyle = [
+	'.fakehttp-service-row {',
+	'  display: flex;',
+	'  align-items: center;',
+	'  justify-content: space-between;',
+	'  gap: 1rem;',
+	'  flex-wrap: wrap;',
+	'}',
+	'.fakehttp-status {',
+	'  display: inline-flex;',
+	'  align-items: center;',
+	'  gap: .5rem;',
+	'  min-width: 7.5rem;',
+	'  min-height: 2rem;',
+	'  font-weight: 600;',
+	'}',
+	'.fakehttp-status::before {',
+	'  content: "";',
+	'  width: .65rem;',
+	'  height: .65rem;',
+	'  flex: 0 0 .65rem;',
+	'  border-radius: 50%;',
+	'  background: #77808a;',
+	'}',
+	'.fakehttp-status.is-running::before { background: #2e8b57; }',
+	'.fakehttp-status.is-stopped::before { background: #c0392b; }',
+	'.fakehttp-status.is-working::before {',
+	'  background: #d68910;',
+	'  animation: fakehttp-pulse 1s ease-in-out infinite alternate;',
+	'}',
+	'.fakehttp-service-actions {',
+	'  display: flex;',
+	'  align-items: center;',
+	'  justify-content: flex-end;',
+	'  gap: .5rem;',
+	'  flex-wrap: wrap;',
+	'}',
+	'.fakehttp-service-actions .cbi-button {',
+	'  display: inline-flex;',
+	'  align-items: center;',
+	'  justify-content: center;',
+	'  gap: .4rem;',
+	'  min-width: 6.75rem;',
+	'  min-height: 2.25rem;',
+	'}',
+	'.fakehttp-action-icon {',
+	'  width: 1rem;',
+	'  text-align: center;',
+	'  font-size: 1rem;',
+	'  line-height: 1;',
+	'}',
+	'@keyframes fakehttp-pulse { from { opacity: .45; } to { opacity: 1; } }',
+	'@media (prefers-reduced-motion: reduce) {',
+	'  .fakehttp-status.is-working::before { animation: none; }',
+	'}',
+	'@media (max-width: 600px) {',
+	'  .fakehttp-service-row, .fakehttp-service-actions { width: 100%; }',
+	'  .fakehttp-service-actions .cbi-button { flex: 1 1 7rem; }',
+	'}'
+].join('\n');
+
 function callInit(action) {
 	return fs.exec('/etc/init.d/fakehttp', [ action ]);
 }
@@ -29,7 +90,18 @@ function setStatus(running) {
 
 	status.textContent = running == null ? _('Unavailable') :
 		(running ? _('Running') : _('Stopped'));
-	status.className = running ? 'ifacebadge ifacebadge-active' : 'ifacebadge';
+	status.className = 'fakehttp-status ' + (running == null ?
+		'is-unavailable' : (running ? 'is-running' : 'is-stopped'));
+}
+
+function setWorkingStatus() {
+	var status = document.getElementById('fakehttp_status');
+
+	if (!status)
+		return;
+
+	status.textContent = _('Working...');
+	status.className = 'fakehttp-status is-working';
 }
 
 function setButtons(running) {
@@ -65,6 +137,7 @@ function handleAction(action) {
 	var expected = action !== 'stop';
 
 	serviceBusy = true;
+	setWorkingStatus();
 	setButtons(null);
 
 	return callInit(action).then(function(res) {
@@ -72,7 +145,7 @@ function handleAction(action) {
 			throw new Error(String(res.stderr || res.stdout ||
 				_('Service action failed')).trim());
 		}
-		return waitForStatus(expected, 9);
+		return waitForStatus(expected, 20);
 	}).then(function(running) {
 		if (running == null)
 			throw new Error(_('Unable to read FakeHTTP service status'));
@@ -105,11 +178,12 @@ function validatePayload(section_id, value) {
 		return _('Control characters are not allowed');
 
 	if (type === 'binary')
-		return value.charAt(0) === '/' ? true : _('Binary payload path must be absolute');
+		return value.length > 4095 ? _('Binary payload path is too long') :
+			(value.charAt(0) === '/' ? true : _('Binary payload path must be absolute'));
 
 	if (value.length > 253)
 		return _('Host name is too long');
-	if (/[^\x21-\x7e]/.test(value) || /[\/\\]/.test(value))
+	if (!/^(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)*[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/.test(value))
 		return _('Enter a valid host name');
 
 	return true;
@@ -160,77 +234,87 @@ return view.extend({
 		o = s.option(form.Value, 'payload', _('Payload'));
 		o.validate = validatePayload;
 		o.editable = true;
+		o.placeholder = 'www.example.com';
 		o.rmempty = false;
 
 		o = s.option(form.Value, 'comment', _('Comment'));
-		o.editable = true;
+		o.modalonly = true;
 		o.rmempty = true;
 
 		s = m.section(form.NamedSection, 'advanced', 'advanced', _('Advanced'));
 		s.anonymous = true;
 		s.addremove = false;
+		s.tab('packet', _('Packet'));
+		s.tab('firewall', _('Firewall'));
 
-		o = s.option(form.Flag, 'skip', _('Skip firewall rules'));
+		o = s.taboption('firewall', form.Flag, 'skip', _('Skip firewall rules'));
 		o.rmempty = false;
 
-		o = s.option(form.Flag, 'disable_estimation', _('Disable hop estimation'));
+		o = s.taboption('packet', form.Flag, 'disable_estimation',
+			_('Disable hop estimation'));
 		o.rmempty = false;
 
-		o = s.option(form.Value, 'pct', _('Dynamic TTL percentage'));
+		o = s.taboption('packet', form.Value, 'pct', _('Dynamic TTL percentage'));
 		o.datatype = 'or(-1,range(1,99))';
 		o.placeholder = '-1';
 		o.rmempty = false;
 
-		o = s.option(form.Value, 'fwmark_bypassing', _('Firewall mark'));
+		o = s.taboption('firewall', form.Value, 'fwmark_bypassing',
+			_('Firewall mark'));
 		o.datatype = 'or(-1,uinteger)';
 		o.placeholder = '-1';
 		o.rmempty = false;
 
-		o = s.option(form.Value, 'fwmark_handle', _('Firewall mark mask'));
+		o = s.taboption('firewall', form.Value, 'fwmark_handle',
+			_('Firewall mark mask'));
 		o.datatype = 'or(-1,uinteger)';
 		o.placeholder = '-1';
 		o.rmempty = false;
 
-		o = s.option(form.Value, 'queue_number', _('NFQUEUE number'));
+		o = s.taboption('firewall', form.Value, 'queue_number',
+			_('NFQUEUE number'));
 		o.datatype = 'or(-1,range(0,65535))';
 		o.placeholder = '-1';
 		o.rmempty = false;
 
-		o = s.option(form.DynamicList, 'bypass_port', _('Bypass TCP ports'));
+		o = s.taboption('firewall', form.DynamicList, 'bypass_port',
+			_('Bypass TCP ports'));
 		o.datatype = 'range(1,65535)';
 		o.placeholder = '65499';
 		o.rmempty = true;
 
-		o = s.option(form.Value, 'repeat', _('Packet repeat'));
+		o = s.taboption('packet', form.Value, 'repeat', _('Packet repeat'));
 		o.datatype = 'or(-1,range(1,10))';
 		o.placeholder = '-1';
 		o.rmempty = false;
 
-		o = s.option(form.Value, 'ttl', _('TTL'));
+		o = s.taboption('packet', form.Value, 'ttl', _('TTL'));
 		o.datatype = 'or(-1,range(1,255))';
 		o.placeholder = '-1';
 		o.rmempty = false;
 
-		o = s.option(form.Flag, 'use_iptables', _('Use iptables'));
+		o = s.taboption('firewall', form.Flag, 'use_iptables', _('Use iptables'));
 		o.rmempty = false;
 
 		return getStatus().then(function(running) {
 			return m.render().then(function(node) {
 				serviceReadonly = m.readonly === true;
 				var service = E('div', { 'class': 'cbi-section' }, [
+					E('style', { 'type': 'text/css' }, pageStyle),
 					E('h3', {}, _('Service')),
 					E('div', { 'class': 'cbi-section-node' }, [
-						E('div', { 'class': 'cbi-value' }, [
-							E('label', { 'class': 'cbi-value-title' }, _('Status')),
-							E('div', { 'class': 'cbi-value-field' }, [
-								E('span', { 'id': 'fakehttp_status' }, '')
-							])
-						]),
-						E('div', {
-							'id': 'fakehttp_service_buttons',
-							'class': 'cbi-page-actions'
-						}, [
-							E('button', {
+						E('div', { 'class': 'fakehttp-service-row' }, [
+							E('span', {
+								'id': 'fakehttp_status',
+								'class': 'fakehttp-status',
+								'role': 'status',
+								'aria-live': 'polite'
+							}, ''),
+							E('div', {
+								'id': 'fakehttp_service_buttons',
+								'class': 'fakehttp-service-actions'
+							}, [
+								E('button', {
 								'type': 'button',
 								'data-action': 'start',
 								'class': 'btn cbi-button cbi-button-positive',
@@ -239,9 +323,14 @@ return view.extend({
 									ev.preventDefault();
 									return handleAction('start');
 								}
-							}, _('Start')),
-							' ',
-							E('button', {
+								}, [
+								E('span', {
+									'class': 'fakehttp-action-icon',
+									'aria-hidden': 'true'
+								}, '\u25b6'),
+								_('Start')
+								]),
+								E('button', {
 								'type': 'button',
 								'data-action': 'restart',
 								'class': 'btn cbi-button cbi-button-apply',
@@ -250,9 +339,14 @@ return view.extend({
 									ev.preventDefault();
 									return handleAction('restart');
 								}
-							}, _('Restart')),
-							' ',
-							E('button', {
+								}, [
+								E('span', {
+									'class': 'fakehttp-action-icon',
+									'aria-hidden': 'true'
+								}, '\u21bb'),
+								_('Restart')
+								]),
+								E('button', {
 								'type': 'button',
 								'data-action': 'stop',
 								'class': 'btn cbi-button cbi-button-negative',
@@ -261,7 +355,14 @@ return view.extend({
 									ev.preventDefault();
 									return handleAction('stop');
 								}
-							}, _('Stop'))
+								}, [
+								E('span', {
+									'class': 'fakehttp-action-icon',
+									'aria-hidden': 'true'
+								}, '\u25a0'),
+								_('Stop')
+								])
+							])
 						])
 					])
 				]);
@@ -270,6 +371,9 @@ return view.extend({
 				updateService(running);
 
 				poll.add(function() {
+					if (serviceBusy)
+						return Promise.resolve();
+
 					return getStatus().then(updateService);
 				});
 

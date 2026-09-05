@@ -23,8 +23,8 @@ This compatibility work is intended for OpenWrt 21.02 through 25.12. The
 19.07 and older series are end-of-life and are not release-claimed until they
 receive a separate toolchain and LuCI validation pass.
 
-The current package revisions are `fakehttp 99.2-r12` and
-`luci-app-fakehttp 99.2-r12`.
+The current package revisions are `fakehttp 99.2-r13` and
+`luci-app-fakehttp 99.2-r13`.
 
 ## Build IPK packages for OpenWrt 24.10 and older
 
@@ -41,8 +41,8 @@ existing `package/fakehttp` or `package/luci-app-fakehttp` path in the SDK.
 The output is normally:
 
 ```text
-/tmp/fakehttp-ipk/fakehttp_99.2-12_<arch>.ipk
-/tmp/fakehttp-ipk/luci-app-fakehttp_99.2-12_all.ipk
+/tmp/fakehttp-ipk/fakehttp_99.2-13_<arch>.ipk
+/tmp/fakehttp-ipk/luci-app-fakehttp_99.2-13_all.ipk
 ```
 
 The equivalent manual SDK commands are:

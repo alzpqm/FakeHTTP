@@ -115,6 +115,15 @@ make_script_metadata() {
         "export pkgname=\"$package\"" \
         'default_postinst' \
         >"$dir/post-install"
+
+    if [ "$package" = fakehttp ]; then
+        printf '%s\n' \
+            '[ -n "${IPKG_INSTROOT:-}" ] || {' \
+            '    /etc/init.d/fakehttp enable >/dev/null 2>&1' \
+            '    /etc/init.d/fakehttp restart >/dev/null 2>&1' \
+            '}' \
+            >>"$dir/post-install"
+    fi
     printf '%s\n' \
         '#!/bin/sh' \
         '[ -s "${IPKG_INSTROOT:-}/lib/functions.sh" ] || exit 0' \

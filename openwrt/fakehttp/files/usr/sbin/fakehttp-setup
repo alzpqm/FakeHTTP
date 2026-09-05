@@ -1,7 +1,5 @@
 #!/bin/sh
 
-. /lib/functions/network.sh
-
 usage()
 {
 	cat <<'EOF'
@@ -29,14 +27,35 @@ esac
 host="$1"
 iface="${2:-wan}"
 
-if [ -z "$host" ]; then
-	usage >&2
+case "$host" in
+	""|.*|*.|*..*|*[!A-Za-z0-9.-]*)
+	echo "Invalid host name." >&2
+	exit 1
+	;;
+esac
+
+if [ "${#host}" -gt 253 ]; then
+	echo "Host name is too long." >&2
 	exit 1
 fi
+
+case "$iface" in
+	""|*[!A-Za-z0-9_.:@-]*)
+	echo "Invalid network or interface name." >&2
+	exit 1
+	;;
+esac
+
+. /lib/functions/network.sh
 
 network_flush_cache
 if network_get_device dev "$iface"; then
 	iface="$dev"
+fi
+
+if [ "${#iface}" -gt 15 ]; then
+	echo "Interface name is too long." >&2
+	exit 1
 fi
 
 while uci -q delete fakehttp.@payload[0]; do :; done
