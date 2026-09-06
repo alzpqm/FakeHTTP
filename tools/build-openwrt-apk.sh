@@ -31,6 +31,7 @@ APK="$SDK_DIR/staging_dir/host/bin/apk"
 TARGET_STAGING=$(find "$SDK_DIR/staging_dir" -maxdepth 1 -type d -name 'target-*' | head -n 1)
 TARGET_CC=${TARGET_CC:-$(find "$SDK_DIR/staging_dir" -path '*/bin/*-openwrt-linux-musl-gcc' -type f | head -n 1)}
 TARGET_STRIP=${TARGET_STRIP:-$(find "$SDK_DIR/staging_dir" -path '*/bin/*-openwrt-linux-musl-strip' -type f | head -n 1)}
+PO2LMO=${PO2LMO:-$SDK_DIR/staging_dir/hostpkg/bin/po2lmo}
 
 [ -f "$SDK_DIR/include/toplevel.mk" ] || {
     echo "not an OpenWrt SDK/buildroot: $SDK_DIR" >&2
@@ -40,6 +41,7 @@ TARGET_STRIP=${TARGET_STRIP:-$(find "$SDK_DIR/staging_dir" -path '*/bin/*-openwr
 [ -d "$TARGET_STAGING" ] || { echo "missing target staging dir" >&2; exit 1; }
 [ -x "$TARGET_CC" ] || { echo "missing target compiler" >&2; exit 1; }
 [ -x "$TARGET_STRIP" ] || { echo "missing target strip" >&2; exit 1; }
+[ -x "$PO2LMO" ] || { echo "missing po2lmo tool: $PO2LMO" >&2; exit 1; }
 [ "$(id -u)" -eq 0 ] || {
     echo "run this builder as root so package files are owned by root" >&2
     exit 1
@@ -125,6 +127,16 @@ make_script_metadata() {
             >>"$dir/post-install"
     fi
 
+    if [ "$package" = luci-app-fakehttp ]; then
+        printf '%s\n' \
+            '[ -n "${IPKG_INSTROOT:-}" ] || {' \
+            '    rm -f /tmp/luci-indexcache.*' \
+            '    rm -rf /tmp/luci-modulecache/' \
+            '    /etc/init.d/rpcd reload >/dev/null 2>&1' \
+            '}' \
+            >>"$dir/post-install"
+    fi
+
     {
         printf '%s\n' '#!/bin/sh' 'export PKG_UPGRADE=1'
         sed '/^[[:space:]]*#!/d' "$dir/post-install"
@@ -147,8 +159,11 @@ make_script_metadata "$FAKEHTTP_SCRIPTS" fakehttp
 
 cp -Rp "$ROOT_DIR/openwrt/luci-app-fakehttp/root/." "$LUCI_ROOT/"
 mkdir -p "$LUCI_ROOT/www/luci-static/resources/view"
+mkdir -p "$LUCI_ROOT/usr/lib/lua/luci/i18n"
 cp -p "$ROOT_DIR/openwrt/luci-app-fakehttp/htdocs/luci-static/resources/view/fakehttp.js" \
     "$LUCI_ROOT/www/luci-static/resources/view/fakehttp.js"
+"$PO2LMO" "$ROOT_DIR/openwrt/luci-app-fakehttp/po/zh_Hant/fakehttp.po" \
+    "$LUCI_ROOT/usr/lib/lua/luci/i18n/fakehttp.zh-tw.lmo"
 make_file_metadata "$LUCI_ROOT" luci-app-fakehttp
 make_script_metadata "$LUCI_SCRIPTS" luci-app-fakehttp
 
@@ -161,7 +176,7 @@ chown -R 0:0 "$FAKEHTTP_ROOT" "$LUCI_ROOT"
     --info "arch:$ARCH" \
     --info "license:GPL-3.0-or-later" \
     --info "origin:feeds/base/fakehttp" \
-    --info "url:https://github.com/MikeWang000000/FakeHTTP" \
+    --info "url:https://github.com/alzpqm/FakeHTTP" \
     --info "maintainer:FakeHTTP maintainers" \
     --info "provides:fakehttp-any" \
     --info "depends:libc libnetfilter-queue1 libnfnetlink0 libmnl0 kmod-nfnetlink-queue kmod-nft-queue nftables-json" \
@@ -178,7 +193,7 @@ chown -R 0:0 "$FAKEHTTP_ROOT" "$LUCI_ROOT"
     --info "arch:$ARCH" \
     --info "license:GPL-3.0-or-later" \
     --info "origin:feeds/base/luci-app-fakehttp" \
-    --info "url:https://github.com/MikeWang000000/FakeHTTP" \
+    --info "url:https://github.com/alzpqm/FakeHTTP" \
     --info "maintainer:FakeHTTP maintainers" \
     --info "depends:fakehttp luci-base rpcd-mod-file" \
     --script "post-install:$LUCI_SCRIPTS/post-install" \

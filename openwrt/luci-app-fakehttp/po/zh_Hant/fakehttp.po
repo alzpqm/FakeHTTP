@@ -1,0 +1,146 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: luci-app-fakehttp 99.2-r15\n"
+"PO-Revision-Date: 2026-09-06 00:00+0800\n"
+"Last-Translator: FakeHTTP Maintainers\n"
+"Language-Team: Traditional Chinese\n"
+"Language: zh_TW\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "A payload is required"
+msgstr "必須填寫偽裝內容"
+
+msgid "Add payload"
+msgstr "新增偽裝內容"
+
+msgid "Advanced"
+msgstr "進階設定"
+
+msgid "Binary"
+msgstr "二進位"
+
+msgid "Binary payload path is too long"
+msgstr "二進位偽裝檔案路徑過長"
+
+msgid "Binary payload path must be absolute"
+msgstr "二進位偽裝檔案必須使用絕對路徑"
+
+msgid "Bypass TCP ports"
+msgstr "略過 TCP 連接埠"
+
+msgid "Comment"
+msgstr "備註"
+
+msgid "Control characters are not allowed"
+msgstr "不允許使用控制字元"
+
+msgid "Disable hop estimation"
+msgstr "停用躍點估算"
+
+msgid "Dynamic TTL percentage"
+msgstr "動態 TTL 百分比"
+
+msgid "Enable"
+msgstr "啟用"
+
+msgid "Enter a valid host name"
+msgstr "請輸入有效的主機名稱"
+
+msgid "FakeHTTP"
+msgstr "FakeHTTP"
+
+msgid "FakeHTTP did not start"
+msgstr "FakeHTTP 未能啟動"
+
+msgid "FakeHTTP did not stop"
+msgstr "FakeHTTP 未能停止"
+
+msgid "Firewall"
+msgstr "防火牆"
+
+msgid "Firewall mark"
+msgstr "防火牆標記"
+
+msgid "Firewall mark mask"
+msgstr "防火牆標記遮罩"
+
+msgid "General"
+msgstr "一般設定"
+
+msgid "Host name is too long"
+msgstr "主機名稱過長"
+
+msgid "Interfaces"
+msgstr "網路介面"
+
+msgid "NFQUEUE number"
+msgstr "NFQUEUE 編號"
+
+msgid "Packet"
+msgstr "封包"
+
+msgid "Packet repeat"
+msgstr "封包重複次數"
+
+msgid "Payload"
+msgstr "偽裝內容"
+
+msgid "Payloads"
+msgstr "偽裝內容"
+
+msgid "Restart"
+msgstr "重新啟動"
+
+msgid "Restart FakeHTTP"
+msgstr "重新啟動 FakeHTTP"
+
+msgid "Running"
+msgstr "執行中"
+
+msgid "Service"
+msgstr "服務狀態"
+
+msgid "Service action failed"
+msgstr "服務操作失敗"
+
+msgid "Silent mode"
+msgstr "靜默模式"
+
+msgid "Skip firewall rules"
+msgstr "略過防火牆規則"
+
+msgid "Start"
+msgstr "啟動"
+
+msgid "Start FakeHTTP"
+msgstr "啟動 FakeHTTP"
+
+msgid "Stop"
+msgstr "停止"
+
+msgid "Stop FakeHTTP"
+msgstr "停止 FakeHTTP"
+
+msgid "Stopped"
+msgstr "已停止"
+
+msgid "TTL"
+msgstr "TTL"
+
+msgid "Type"
+msgstr "類型"
+
+msgid "Unable to read FakeHTTP service status"
+msgstr "無法讀取 FakeHTTP 服務狀態"
+
+msgid "Unavailable"
+msgstr "無法取得狀態"
+
+msgid "Use iptables"
+msgstr "使用 iptables"
+
+msgid "Working..."
+msgstr "處理中..."

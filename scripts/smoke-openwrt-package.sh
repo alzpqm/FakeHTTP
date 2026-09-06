@@ -26,12 +26,17 @@ grep -q '+PACKAGE_firewall4:kmod-nft-queue' openwrt/fakehttp/Makefile
 grep -q '+PACKAGE_firewall:iptables-mod-nfqueue' openwrt/fakehttp/Makefile
 grep -q '+PACKAGE_firewall:iptables-mod-conntrack-extra' openwrt/fakehttp/Makefile
 grep -q 'STRIP="$(TARGET_STRIP)"' openwrt/fakehttp/Makefile
-grep -q '^PKG_RELEASE:=14$' openwrt/fakehttp/Makefile
+grep -q '^PKG_RELEASE:=15$' openwrt/fakehttp/Makefile
+grep -q 'URL:=https://github.com/alzpqm/FakeHTTP' openwrt/fakehttp/Makefile
 grep -q -- '--info "arch:$ARCH"' tools/build-openwrt-apk.sh
+test "$(grep -c -- '--info "url:https://github.com/alzpqm/FakeHTTP"' \
+	tools/build-openwrt-apk.sh)" -eq 2
 grep -q "Package/luci-app-fakehttp" openwrt/luci-app-fakehttp/Makefile
 grep -q 'DEPENDS:=+fakehttp +luci-base +rpcd-mod-file' \
 	openwrt/luci-app-fakehttp/Makefile
-grep -q '^PKG_RELEASE:=14$' openwrt/luci-app-fakehttp/Makefile
+grep -q '^PKG_RELEASE:=15$' openwrt/luci-app-fakehttp/Makefile
+grep -q 'luci-base/host' openwrt/luci-app-fakehttp/Makefile
+grep -q 'fakehttp.zh-tw.lmo' openwrt/luci-app-fakehttp/Makefile
 grep -q "/etc/init.d/fakehttp restart" openwrt/fakehttp/Makefile
 grep -q 'remove|deinstall|uninstall)' openwrt/fakehttp/Makefile
 grep -q "config globals 'globals'" "$ROOT/etc/config/fakehttp"
@@ -64,12 +69,16 @@ grep -q '/etc/init.d/fakehttp restart' tools/build-openwrt-apk.sh
 grep -q 'export PKG_UPGRADE=1' tools/build-openwrt-apk.sh
 grep -q 'post-upgrade:$FAKEHTTP_SCRIPTS/post-upgrade' tools/build-openwrt-apk.sh
 grep -q 'post-upgrade:$LUCI_SCRIPTS/post-upgrade' tools/build-openwrt-apk.sh
+grep -q 'fakehttp.zh-tw.lmo' tools/build-openwrt-apk.sh
 ! openwrt/fakehttp/files/usr/sbin/fakehttp-setup "bad'host" wan >/dev/null 2>&1
 ! openwrt/fakehttp/files/usr/sbin/fakehttp-setup example.com "bad'iface" >/dev/null 2>&1
 
 json_pp < openwrt/luci-app-fakehttp/root/usr/share/luci/menu.d/luci-app-fakehttp.json >/dev/null
 json_pp < openwrt/luci-app-fakehttp/root/usr/share/rpcd/acl.d/luci-app-fakehttp.json >/dev/null
+msgfmt --check --check-format -o /dev/null \
+	openwrt/luci-app-fakehttp/po/zh_Hant/fakehttp.po
 node --check openwrt/luci-app-fakehttp/htdocs/luci-static/resources/view/fakehttp.js >/dev/null
 node tests/test-luci-view.js
+node tests/test-luci-i18n.js
 
 echo "OpenWrt package smoke test passed."

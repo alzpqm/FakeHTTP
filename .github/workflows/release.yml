@@ -1,50 +1,111 @@
-name: Release
-run-name: Release ${{ github.event.inputs.version }}
+name: Release OpenWrt 25+ APK
+run-name: Release ${{ inputs.tag }}
 
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: Version Number
+      tag:
+        description: Release tag, for example openwrt-99.2-r15
         type: string
         required: true
 
-jobs:
-  Build:
-    uses: ./.github/workflows/ci.yml
-    with:
-      version: ${{ github.event.inputs.version }}
+permissions:
+  contents: write
 
-  Release:
-    permissions:
-      contents: write
+concurrency:
+  group: release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Test, build, and release x86_64 APKs
     runs-on: ubuntu-latest
-    needs: Build
+    env:
+      OPENWRT_VERSION: 25.12.5
+      OPENWRT_SDK_FILE: openwrt-sdk-25.12.5-x86-64_gcc-14.3.0_musl.Linux-x86_64.tar.zst
+      OPENWRT_SDK_SHA256: 0c8df0151a1e88feb7c03d694d61f6a18d51872815b7c811d76e2b77504d5e9c
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          path: ${{ github.workspace }}/artifacts
-      - name: Reorganize files
-        run: |
-          mkdir release
-          cd artifacts
-          chmod a+x */fakehttp*
-          for triplet in *; do
-            tar czvf "../release/$triplet.tar.gz" "$triplet"
-          done
-      - name: Make a tag
-        run: |
-          git config user.name 'GitHub Actions'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git tag -a '${{ github.event.inputs.version }}' -m '${{ github.event.inputs.version }}'
-          git push origin '${{ github.event.inputs.version }}'
-      - name: Make a release
+          fetch-depth: 0
+
+      - name: Validate synchronized release tag
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
         run: |
-          gh release create --title 'v${{ github.event.inputs.version }}' --generate-notes --verify-tag '${{ github.event.inputs.version }}' release/*.tar.gz
+          test "$GITHUB_REF_NAME" = main
+          fakehttp_version=$(awk -F:= '$1 == "PKG_VERSION" { print $2; exit }' openwrt/fakehttp/Makefile)
+          fakehttp_release=$(awk -F:= '$1 == "PKG_RELEASE" { print $2; exit }' openwrt/fakehttp/Makefile)
+          luci_version=$(awk -F:= '$1 == "PKG_VERSION" { print $2; exit }' openwrt/luci-app-fakehttp/Makefile)
+          luci_release=$(awk -F:= '$1 == "PKG_RELEASE" { print $2; exit }' openwrt/luci-app-fakehttp/Makefile)
+
+          test "$fakehttp_version-r$fakehttp_release" = "$luci_version-r$luci_release"
+          test "$RELEASE_TAG" = "openwrt-$fakehttp_version-r$fakehttp_release"
+          ! git rev-parse --verify --quiet "refs/tags/$RELEASE_TAG"
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential clang-format curl gettext libjson-pp-perl \
+            libmnl-dev libnetfilter-queue-dev libnfnetlink-dev pkg-config zstd
+
+      - name: Run source and LuCI tests
+        run: |
+          make clean
+          make test
+          make clean
+          make DEBUG=1 test
+          clang-format --dry-run --Werror src/*.c include/*.h
+          ./scripts/smoke-openwrt-package.sh
+
+      - name: Download and verify OpenWrt SDK
+        run: |
+          sdk_url="https://downloads.openwrt.org/releases/$OPENWRT_VERSION/targets/x86/64/$OPENWRT_SDK_FILE"
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/$OPENWRT_SDK_FILE" "$sdk_url"
+          printf '%s  %s\n' "$OPENWRT_SDK_SHA256" "$RUNNER_TEMP/$OPENWRT_SDK_FILE" \
+            | sha256sum --check --strict
+          mkdir -p "$RUNNER_TEMP/openwrt-sdk"
+          tar --use-compress-program=unzstd -xf "$RUNNER_TEMP/$OPENWRT_SDK_FILE" \
+            -C "$RUNNER_TEMP/openwrt-sdk"
+
+      - name: Build and verify OpenWrt 25 APKs
+        run: |
+          sdk_dir=$(find "$RUNNER_TEMP/openwrt-sdk" -mindepth 1 -maxdepth 1 -type d | head -n 1)
+          mkdir -p release
+          sudo env ARCH=x86_64 BUILD_DIR="$RUNNER_TEMP/fakehttp-apk-build" \
+            ./tools/build-openwrt-apk.sh "$sdk_dir" "$GITHUB_WORKSPACE/release"
+          sudo chown -R "$(id -u):$(id -g)" release build
+          "$sdk_dir/staging_dir/host/bin/apk" verify --allow-untrusted release/*.apk
+          (cd release && sha256sum ./*.apk > SHA256SUMS)
+
+      - name: Create tag and Traditional Chinese release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          git config user.name 'FakeHTTP Maintainers'
+          git config user.email 'fakehttp-maintainers@users.noreply.github.com'
+          git tag -a "$RELEASE_TAG" -m "$RELEASE_TAG"
+          git push origin "$RELEASE_TAG"
+          release_title=${RELEASE_TAG#openwrt-}
+
+          cat >"$RUNNER_TEMP/release-notes.md" <<'EOF'
+          FakeHTTP 與 LuCI 套件版本已同步更新。
+
+          本版重點：
+
+          - 修正 LuCI 夜間模式，狀態文字與指示色改用 OpenWrt Bootstrap 主題變數。
+          - 新增完整正體中文 LuCI 介面，翻譯已直接包含於 LuCI APK。
+          - GitHub 文件改以正體中文為主，並保留英文文件。
+          - Release 只提供經實機驗證的 OpenWrt 25.12+ x86_64 APK；OpenWrt 24.10 與更早版本請使用相符 SDK 自行編譯。
+
+          安裝前請核對 `SHA256SUMS`。附件為未簽章套件，只適用於相符的 OpenWrt 版本與 x86_64 架構。
+          EOF
+
+          gh release create "$RELEASE_TAG" \
+            --title "OpenWrt $release_title 正式版" \
+            --notes-file "$RUNNER_TEMP/release-notes.md" \
+            release/*.apk \
+            release/SHA256SUMS

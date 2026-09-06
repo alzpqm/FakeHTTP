@@ -138,7 +138,16 @@ view.render().then(function(node) {
 	assert.ok(node.inserted, 'service section was not inserted');
 	assert.strictEqual(elements.fakehttp_status.attrs.role, 'status');
 	assert.strictEqual(elements.fakehttp_status.attrs['aria-live'], 'polite');
+	assert.strictEqual(elements.fakehttp_status.attrs['aria-atomic'], 'true');
 	assert.strictEqual(elements.fakehttp_status.textContent, 'Running');
+	const style = node.inserted.children.find(function(child) {
+		return child.tag === 'style';
+	});
+	assert.ok(style, 'page style was not inserted');
+	assert.match(style.children[0], /var\(--success-color-high\)/);
+	assert.match(style.children[0], /var\(--error-color-high\)/);
+	assert.match(style.children[0], /var\(--warn-color-high\)/);
+	assert.doesNotMatch(style.children[0], /#[0-9a-f]{3,8}\b/i);
 	assert.strictEqual(buttons.length, 3);
 	assert.deepStrictEqual(buttons.map(function(button) {
 		return button.attrs['data-action'];

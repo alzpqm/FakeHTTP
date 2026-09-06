@@ -1,12 +1,12 @@
 # FakeHTTP
 
-[English](README.en.md)
+[正體中文](README.md)
 
-FakeHTTP 透過 Linux Netfilter Queue（NFQUEUE），在 TCP 連線建立時送出
-HTTP/HTTPS 形式的偽裝封包。專案包含命令列程式，以及適合一般 OpenWrt
-使用者的 UCI 服務與 LuCI 網頁控制介面。
+FakeHTTP makes TCP connection setup look like HTTP/HTTPS traffic using Linux
+Netfilter Queue (NFQUEUE). The project includes the command-line program plus
+an OpenWrt UCI service and LuCI control page.
 
-## 快速開始
+## Quick start
 
 ```sh
 fakehttp -h www.example.com -i eth0
@@ -14,21 +14,22 @@ fakehttp -h www.example.com -i eth0
 
 ## OpenWrt
 
-建議使用 [OpenWrt 99.2-r15 正式版](https://github.com/alzpqm/FakeHTTP/releases/tag/openwrt-99.2-r15)。
-Release 頁面只提供經過實機驗證的 OpenWrt 25.12+ x86_64 APK：
+Use the [OpenWrt 99.2-r15 release](https://github.com/alzpqm/FakeHTTP/releases/tag/openwrt-99.2-r15).
+Release assets contain only the router-tested OpenWrt 25.12+ x86_64 APKs:
 
 ```sh
 apk add --allow-untrusted ./fakehttp-99.2-r15.apk
 apk add --allow-untrusted ./luci-app-fakehttp-99.2-r15.apk
 ```
 
-安裝後前往「服務 -> FakeHTTP」。LuCI 介面支援正體中文、淺色與夜間模式。
+After installation, open `Services -> FakeHTTP`. The LuCI page supports
+Traditional Chinese and both light and dark themes.
 
-OpenWrt 24.10 與更早版本不提供預先編譯套件。這些版本仍可使用符合路由器
-版本與架構的 SDK 自行編譯 IPK。完整步驟請參閱
-[OpenWrt 安裝與編譯說明](openwrt/README.md)。
+Prebuilt packages are not provided for OpenWrt 24.10 and older. Users of those
+releases can build IPKs with an SDK matching their router release and target.
+See [openwrt/README.en.md](openwrt/README.en.md) for details.
 
-## 使用方式
+## Usage
 
 ```text
 Usage: fakehttp [options]
@@ -65,9 +66,10 @@ Advanced Options:
   -z                 use iptables commands instead of nft
 ```
 
-數值參數預設使用十進位，只有 `0x` 或 `0X` 前綴表示十六進位。舊式前導零
-八進位寫法不受支援；十進位請移除前導零，或改用明確的十六進位前綴。
+Numeric option values are decimal unless prefixed with `0x` or `0X`. Legacy
+leading-zero octal notation is not supported; remove the leading zero for
+decimal or use an explicit hexadecimal prefix.
 
-## 授權
+## License
 
 GNU General Public License v3.0

@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=fakehttp
 PKG_VERSION:=99.2
-PKG_RELEASE:=14
+PKG_RELEASE:=15
 
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_LICENSE_FILES:=LICENSE
@@ -18,7 +18,7 @@ define Package/fakehttp
   SECTION:=net
   CATEGORY:=Network
   TITLE:=TCP HTTP obfuscation with NFQUEUE
-  URL:=https://github.com/MikeWang000000/FakeHTTP
+  URL:=https://github.com/alzpqm/FakeHTTP
   DEPENDS:=+libnetfilter-queue +libnfnetlink +libmnl +kmod-nfnetlink-queue \
     +PACKAGE_firewall4:nftables-json +PACKAGE_firewall4:kmod-nft-queue \
     +PACKAGE_firewall:iptables-mod-nfqueue \
