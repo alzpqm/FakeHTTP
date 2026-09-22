@@ -29,6 +29,11 @@ apk add --allow-untrusted ./fakehttp-99.2-r16.apk ./luci-app-fakehttp-99.2-r16.a
 OpenWrt 24.10 與更早版本、其他架構請使用對應 SDK 自行編譯。
 發佈資料已掃描匿名化；歷史 Git 物件未重寫。
 
+來源說明：`openwrt-99.2-r16` 標籤包含本版核心修正。附件已套用檔案權限正規化，
+但對應的三行打包腳本修正於標籤之後補交至 `main`；重建附件時請使用該修正版
+`tools/build-openwrt-apk.sh`。GitHub 發佈頁提供補交提交的固定連結。
+此差異僅影響打包檔案權限，不涉及核心程式，既有標籤與附件未被替換。
+
 ## English
 
 Fix subprocess redirection when standard descriptors are closed, and bound idle
@@ -37,3 +42,9 @@ cases and deterministic queue shutdown/readiness/dispatch regressions to CI.
 Validated with sanitizers, GCC analyzer, isolated Linux start/stop, musl target
 regressions and package/LuCI checks. No production-router upgrade, long-duration
 or throughput test was performed for this release.
+
+Source provenance: the r16 tag contains the runtime fixes. The shipped APKs also
+use permission normalization whose three-line builder change was committed to
+main after tagging. Use that corrected builder when reproducing the APKs; the
+release page links the exact follow-up commit. Runtime sources, the published tag
+and the uploaded artifacts are unchanged by this packaging-only correction.

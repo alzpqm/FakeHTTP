@@ -167,6 +167,9 @@ cp -p "$ROOT_DIR/openwrt/luci-app-fakehttp/htdocs/luci-static/resources/view/fak
 make_file_metadata "$LUCI_ROOT" luci-app-fakehttp
 make_script_metadata "$LUCI_SCRIPTS" luci-app-fakehttp
 
+# Checkout files may inherit permissive modes on non-POSIX filesystems.
+find "$FAKEHTTP_ROOT" "$LUCI_ROOT" -type d -exec chmod 0755 {} +
+find "$LUCI_ROOT" -type f -exec chmod 0644 {} +
 chown -R 0:0 "$FAKEHTTP_ROOT" "$LUCI_ROOT"
 
 "$APK" mkpkg \
