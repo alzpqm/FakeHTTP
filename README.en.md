@@ -14,12 +14,12 @@ fakehttp -h www.example.com -i eth0
 
 ## OpenWrt
 
-Use the [OpenWrt 99.2-r15 release](https://github.com/alzpqm/FakeHTTP/releases/tag/openwrt-99.2-r15).
-Release assets contain only the router-tested OpenWrt 25.12+ x86_64 APKs:
+Use the [OpenWrt 99.2-r16 release](https://github.com/alzpqm/FakeHTTP/releases/tag/openwrt-99.2-r16).
+Release assets contain OpenWrt 25.12+ x86_64 APKs; see the release notes for validation scope:
 
 ```sh
-apk add --allow-untrusted ./fakehttp-99.2-r15.apk
-apk add --allow-untrusted ./luci-app-fakehttp-99.2-r15.apk
+apk add --allow-untrusted ./fakehttp-99.2-r16.apk
+apk add --allow-untrusted ./luci-app-fakehttp-99.2-r16.apk
 ```
 
 After installation, open `Services -> FakeHTTP`. The LuCI page supports

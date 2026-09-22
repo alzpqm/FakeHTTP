@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: luci-app-fakehttp 99.2-r15\n"
+"Project-Id-Version: luci-app-fakehttp 99.2-r16\n"
 "PO-Revision-Date: 2026-09-06 00:00+0800\n"
 "Last-Translator: FakeHTTP Maintainers\n"
 "Language-Team: Traditional Chinese\n"

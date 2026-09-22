@@ -22,6 +22,7 @@
 
 #include <errno.h>
 #include <inttypes.h>
+#include <poll.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -264,6 +265,7 @@ int fh_nfq_loop(void)
     int res, ret, err, err_cnt;
     ssize_t recv_len;
     char *buff;
+    struct pollfd poll_fd;
 
     buff = malloc(buffsize);
     if (!buff) {
@@ -272,6 +274,8 @@ int fh_nfq_loop(void)
     }
 
     err_cnt = 0;
+    poll_fd.fd = fd;
+    poll_fd.events = POLLIN;
 
     while (!g_ctx.exit) {
         if (err_cnt >= 20) {
@@ -280,15 +284,42 @@ int fh_nfq_loop(void)
             goto free_buff;
         }
 
-        recv_len = recv(fd, buff, buffsize, 0);
+        /* Bound the idle wait even if a stop signal preceded poll(). */
+        poll_fd.revents = 0;
+        res = poll(&poll_fd, 1, 100);
+        if (res < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            E("ERROR: poll(): %s", strerror(errno));
+            ret = -1;
+            goto free_buff;
+        }
+        if (!res || g_ctx.exit) {
+            continue;
+        }
+        if (poll_fd.revents & POLLNVAL) {
+            E("ERROR: poll(): invalid NFQUEUE socket");
+            ret = -1;
+            goto free_buff;
+        }
+        if (!(poll_fd.revents & (POLLIN | POLLERR | POLLHUP))) {
+            continue;
+        }
+
+        /* Readiness can disappear, or a stop signal can arrive here too. */
+        recv_len = recv(fd, buff, buffsize, MSG_DONTWAIT);
         if (recv_len < 0) {
-            err_cnt++;
             switch (errno) {
                 case EINTR:
-                    continue;
                 case EAGAIN:
+#if EWOULDBLOCK != EAGAIN
+                case EWOULDBLOCK:
+#endif
+                    continue;
                 case ETIMEDOUT:
                 case ENOBUFS:
+                    err_cnt++;
                     E("ERROR: recv(): %s", strerror(errno));
                     continue;
                 default:
@@ -296,6 +327,12 @@ int fh_nfq_loop(void)
                     ret = -1;
                     goto free_buff;
             }
+        }
+
+        if (!recv_len) {
+            E("ERROR: recv(): NFQUEUE socket closed");
+            ret = -1;
+            goto free_buff;
         }
 
         errno = 0;

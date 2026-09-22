@@ -85,27 +85,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
-          git config user.name 'FakeHTTP Maintainers'
-          git config user.email 'fakehttp-maintainers@users.noreply.github.com'
+          release_notes="docs/release-${RELEASE_TAG##*-}.md"
+          test -f "$release_notes"
+          git config user.name 'Codex'
+          git config user.email 'codex@local.invalid'
           git tag -a "$RELEASE_TAG" -m "$RELEASE_TAG"
           git push origin "$RELEASE_TAG"
           release_title=${RELEASE_TAG#openwrt-}
 
-          cat >"$RUNNER_TEMP/release-notes.md" <<'EOF'
-          FakeHTTP 與 LuCI 套件版本已同步更新。
-
-          本版重點：
-
-          - 修正 LuCI 夜間模式，狀態文字與指示色改用 OpenWrt Bootstrap 主題變數。
-          - 新增完整正體中文 LuCI 介面，翻譯已直接包含於 LuCI APK。
-          - GitHub 文件改以正體中文為主，並保留英文文件。
-          - Release 只提供經實機驗證的 OpenWrt 25.12+ x86_64 APK；OpenWrt 24.10 與更早版本請使用相符 SDK 自行編譯。
-
-          安裝前請核對 `SHA256SUMS`。附件為未簽章套件，只適用於相符的 OpenWrt 版本與 x86_64 架構。
-          EOF
-
           gh release create "$RELEASE_TAG" \
             --title "OpenWrt $release_title 正式版" \
-            --notes-file "$RUNNER_TEMP/release-notes.md" \
+            --notes-file "$release_notes" \
             release/*.apk \
             release/SHA256SUMS

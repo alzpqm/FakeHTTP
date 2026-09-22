@@ -26,7 +26,7 @@ grep -q '+PACKAGE_firewall4:kmod-nft-queue' openwrt/fakehttp/Makefile
 grep -q '+PACKAGE_firewall:iptables-mod-nfqueue' openwrt/fakehttp/Makefile
 grep -q '+PACKAGE_firewall:iptables-mod-conntrack-extra' openwrt/fakehttp/Makefile
 grep -q 'STRIP="$(TARGET_STRIP)"' openwrt/fakehttp/Makefile
-grep -q '^PKG_RELEASE:=15$' openwrt/fakehttp/Makefile
+grep -q '^PKG_RELEASE:=16$' openwrt/fakehttp/Makefile
 grep -q 'URL:=https://github.com/alzpqm/FakeHTTP' openwrt/fakehttp/Makefile
 grep -q -- '--info "arch:$ARCH"' tools/build-openwrt-apk.sh
 test "$(grep -c -- '--info "url:https://github.com/alzpqm/FakeHTTP"' \
@@ -34,7 +34,7 @@ test "$(grep -c -- '--info "url:https://github.com/alzpqm/FakeHTTP"' \
 grep -q "Package/luci-app-fakehttp" openwrt/luci-app-fakehttp/Makefile
 grep -q 'DEPENDS:=+fakehttp +luci-base +rpcd-mod-file' \
 	openwrt/luci-app-fakehttp/Makefile
-grep -q '^PKG_RELEASE:=15$' openwrt/luci-app-fakehttp/Makefile
+grep -q '^PKG_RELEASE:=16$' openwrt/luci-app-fakehttp/Makefile
 grep -q 'luci-base/host' openwrt/luci-app-fakehttp/Makefile
 grep -q 'fakehttp.zh-tw.lmo' openwrt/luci-app-fakehttp/Makefile
 grep -q "/etc/init.d/fakehttp restart" openwrt/fakehttp/Makefile

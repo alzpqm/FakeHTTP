@@ -14,12 +14,12 @@ fakehttp -h www.example.com -i eth0
 
 ## OpenWrt
 
-建議使用 [OpenWrt 99.2-r15 正式版](https://github.com/alzpqm/FakeHTTP/releases/tag/openwrt-99.2-r15)。
-Release 頁面只提供經過實機驗證的 OpenWrt 25.12+ x86_64 APK：
+建議使用 [OpenWrt 99.2-r16 正式版](https://github.com/alzpqm/FakeHTTP/releases/tag/openwrt-99.2-r16)。
+Release 頁面提供 OpenWrt 25.12+ x86_64 APK；本版驗證範圍請見發佈說明：
 
 ```sh
-apk add --allow-untrusted ./fakehttp-99.2-r15.apk
-apk add --allow-untrusted ./luci-app-fakehttp-99.2-r15.apk
+apk add --allow-untrusted ./fakehttp-99.2-r16.apk
+apk add --allow-untrusted ./luci-app-fakehttp-99.2-r16.apk
 ```
 
 安裝後前往「服務 -> FakeHTTP」。LuCI 介面支援正體中文、淺色與夜間模式。

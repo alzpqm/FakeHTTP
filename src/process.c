@@ -49,6 +49,20 @@ int fh_execute_command(char **argv, int silent, char *input)
             E("ERROR: pipe(): %s", strerror(errno));
             return -1;
         }
+        /* Standard streams may be closed when a supervisor starts us. */
+        for (i = 0; i < 2; i++) {
+            if (pipefd[i] <= STDERR_FILENO) {
+                fd = fcntl(pipefd[i], F_DUPFD, STDERR_FILENO + 1);
+                if (fd < 0) {
+                    E("ERROR: fcntl(): F_DUPFD: %s", strerror(errno));
+                    close(pipefd[0]);
+                    close(pipefd[1]);
+                    return -1;
+                }
+                close(pipefd[i]);
+                pipefd[i] = fd;
+            }
+        }
     }
 
     pid = fork();
@@ -89,7 +103,9 @@ int fh_execute_command(char **argv, int silent, char *input)
                 E("ERROR: dup2(): %s", strerror(errno));
                 _exit(EXIT_FAILURE);
             }
-            close(fd);
+            if (fd != STDOUT_FILENO && fd != STDERR_FILENO) {
+                close(fd);
+            }
         }
 
         if (input) {

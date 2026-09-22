@@ -2,12 +2,15 @@
 
 #define _GNU_SOURCE
 
+#include <errno.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
+#include "globvar.h"
 #include "process.h"
 
 static void alarm_handler(int signo)
@@ -35,6 +38,67 @@ static int test_closed_stdin(void)
     free(input);
 
     return res < 0 ? 0 : -1;
+}
+
+
+static int test_standard_descriptors(void)
+{
+    int mask, use_log, with_input, failures = 0;
+    char *command[] = {"/bin/sh", "-c", NULL, NULL};
+
+    for (with_input = 0; with_input < 2; with_input++) {
+        command[2] =
+            with_input
+                ? "IFS= read -r value && [ \"$value\" = 'test input' ] && "
+                  "printf 'output\\n' && printf 'error\\n' >&2"
+                : "printf 'output\\n' && printf 'error\\n' >&2";
+        for (use_log = 0; use_log < 2; use_log++) {
+            for (mask = 0; mask < 8; mask++) {
+                int status;
+                pid_t child = fork(), waited;
+                if (child < 0)
+                    return -1;
+                if (!child) {
+                    FILE *log = NULL;
+                    char output[64] = {0};
+                    int fd, result;
+                    alarm(5);
+                    for (fd = 0; fd < 3; fd++) {
+                        if (mask & (1 << fd))
+                            close(fd);
+                    }
+                    if (use_log) {
+                        log = tmpfile();
+                        if (!log)
+                            _exit(2);
+                        g_ctx.logfp = log;
+                    }
+                    result = fh_execute_command(
+                        command, !use_log, with_input ? "test input\n" : NULL);
+                    if (log) {
+                        rewind(log);
+                        if (fread(output, 1, sizeof(output) - 1, log) != 13 ||
+                            strcmp(output, "output\nerror\n"))
+                            result = -1;
+                        fclose(log);
+                    }
+                    _exit(result == 0 ? 0 : 1);
+                }
+                do {
+                    waited = waitpid(child, &status, 0);
+                } while (waited < 0 && errno == EINTR);
+                if (waited < 0)
+                    return -1;
+                if (!WIFEXITED(status) || WEXITSTATUS(status)) {
+                    fprintf(stderr,
+                            "descriptor case input=%d log=%d mask=%d failed\n",
+                            with_input, use_log, mask);
+                    failures++;
+                }
+            }
+        }
+    }
+    return failures ? -1 : 0;
 }
 
 
@@ -70,6 +134,9 @@ int main(void)
         return 1;
     }
 
-    puts("Process EINTR test passed.");
+    if (test_standard_descriptors() < 0)
+        return 1;
+
+    puts("Process EINTR, broken-pipe and 32 descriptor tests passed.");
     return 0;
 }

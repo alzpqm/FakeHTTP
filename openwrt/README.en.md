@@ -7,7 +7,7 @@ service, UCI defaults, LuCI control page, and setup helper.
 
 ## Release scope
 
-GitHub Releases provide only router-tested OpenWrt 25.12+ x86_64 APKs.
+GitHub Releases provide OpenWrt 25.12+ x86_64 APKs. Each release documents its validation scope.
 Prebuilt IPKs are not provided for OpenWrt 24.10 and older; users of those
 releases must build with an SDK matching the router release, target, and
 architecture.
@@ -18,25 +18,26 @@ architecture.
 | 24.10, 23.05, 22.03 | IPK / `opkg` | firewall4 / nftables | Build with a matching SDK |
 | 21.02 | IPK / `opkg` | firewall3 / iptables | Build with a matching SDK |
 
-The current FakeHTTP and LuCI package versions are both `99.2-r15`. OpenWrt
+The current FakeHTTP and LuCI package versions are both `99.2-r16`. OpenWrt
 19.07 and older are end-of-life and are not supported by this project.
 
 ## Install on OpenWrt 25.12+
 
 Download both x86_64 APKs from the
-[99.2-r15 release](https://github.com/alzpqm/FakeHTTP/releases/tag/openwrt-99.2-r15),
+[99.2-r16 release](https://github.com/alzpqm/FakeHTTP/releases/tag/openwrt-99.2-r16),
 verify their checksums, and copy them to the router:
 
 ```sh
-scp fakehttp-99.2-r15.apk root@192.168.1.1:/tmp/
-scp luci-app-fakehttp-99.2-r15.apk root@192.168.1.1:/tmp/
+scp fakehttp-99.2-r16.apk root@192.168.1.1:/tmp/
+scp luci-app-fakehttp-99.2-r16.apk root@192.168.1.1:/tmp/
 ssh root@192.168.1.1
-apk add --allow-untrusted /tmp/fakehttp-99.2-r15.apk
-apk add --allow-untrusted /tmp/luci-app-fakehttp-99.2-r15.apk
+apk add --allow-untrusted /tmp/fakehttp-99.2-r16.apk
+apk add --allow-untrusted /tmp/luci-app-fakehttp-99.2-r16.apk
 ```
 
-The APKs must match the router release and architecture. Release artifacts are
-validated only on OpenWrt 25.12.5 x86_64.
+The APKs must match the router release and architecture. r16 is built with the
+OpenWrt 25.12.5 x86_64 SDK and checked with musl target tests; this release was
+not installed on a production router.
 
 ## Build OpenWrt 25.12+ APKs
 

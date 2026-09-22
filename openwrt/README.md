@@ -7,7 +7,7 @@
 
 ## 發佈範圍
 
-GitHub Release 只提供經過實機安裝測試的 OpenWrt 25.12+ x86_64 APK。
+GitHub Release 提供 OpenWrt 25.12+ x86_64 APK，各版本驗證範圍請見發佈說明。
 OpenWrt 24.10 與更早版本不提供預先編譯的 IPK，使用者必須使用符合路由器
 版本、目標平台與架構的 SDK 自行編譯。
 
@@ -17,24 +17,24 @@ OpenWrt 24.10 與更早版本不提供預先編譯的 IPK，使用者必須使�
 | 24.10、23.05、22.03 | IPK / `opkg` | firewall4 / nftables | 使用對應 SDK 自行編譯 |
 | 21.02 | IPK / `opkg` | firewall3 / iptables | 使用對應 SDK 自行編譯 |
 
-目前 FakeHTTP 與 LuCI 套件版本均為 `99.2-r15`。19.07 與更早版本已停止
+目前 FakeHTTP 與 LuCI 套件版本均為 `99.2-r16`。19.07 與更早版本已停止
 維護，本專案不宣告支援。
 
 ## 安裝 OpenWrt 25.12+
 
-從 [99.2-r15 Release](https://github.com/alzpqm/FakeHTTP/releases/tag/openwrt-99.2-r15)
+從 [99.2-r16 Release](https://github.com/alzpqm/FakeHTTP/releases/tag/openwrt-99.2-r16)
 下載兩個 x86_64 APK，確認雜湊後傳到路由器：
 
 ```sh
-scp fakehttp-99.2-r15.apk root@192.168.1.1:/tmp/
-scp luci-app-fakehttp-99.2-r15.apk root@192.168.1.1:/tmp/
+scp fakehttp-99.2-r16.apk root@192.168.1.1:/tmp/
+scp luci-app-fakehttp-99.2-r16.apk root@192.168.1.1:/tmp/
 ssh root@192.168.1.1
-apk add --allow-untrusted /tmp/fakehttp-99.2-r15.apk
-apk add --allow-untrusted /tmp/luci-app-fakehttp-99.2-r15.apk
+apk add --allow-untrusted /tmp/fakehttp-99.2-r16.apk
+apk add --allow-untrusted /tmp/luci-app-fakehttp-99.2-r16.apk
 ```
 
-APK 必須與路由器版本和架構相符。Release 中的套件只驗證於 OpenWrt
-25.12.5 x86_64，不可安裝到其他架構。
+APK 必須與路由器版本和架構相符。r16 使用 OpenWrt 25.12.5 x86_64 SDK
+建置並驗證 musl 目標測試；本版未在正式路由器上升級，不可安裝到其他架構。
 
 ## 自行編譯 OpenWrt 25.12+ APK
 
