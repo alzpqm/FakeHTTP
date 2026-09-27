@@ -21,9 +21,14 @@ jobs:
       - name: Install test dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libmnl-dev libnetfilter-queue-dev libnfnetlink-dev
+          sudo apt-get install -y build-essential libmnl-dev libnetfilter-queue-dev libnfnetlink-dev iproute2 iptables nftables python3
       - name: Test with sanitizers
         run: make -j2 DEBUG=1 CFLAGS="-Werror -fno-sanitize-recover=undefined" test
+      - name: Test isolated networking regressions
+        run: |
+          make -j2 BUILDDIR=build-net
+          sudo python3 scripts/test-queue-order.py build-net/fakehttp
+          sudo python3 scripts/test-ttl-estimate.py build-net/fakehttp
 
   Lint:
     name: Lint

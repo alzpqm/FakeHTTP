@@ -24,6 +24,7 @@ TEST_PACKET=$(BUILDDIR)/test-packet-validation
 TEST_PROCESS=$(BUILDDIR)/test-process
 TEST_SIGNALS=$(BUILDDIR)/test-signals
 TEST_NFQUEUE=$(BUILDDIR)/test-nfqueue-loop
+TEST_RAWSEND=$(BUILDDIR)/test-rawsend-ttl
 
 ifeq ($(STATIC), 1)
 	override LDFLAGS += -static
@@ -41,13 +42,14 @@ all: $(FAKEHTTP)
 debug:
 	$(MAKE) DEBUG=1
 
-test: all $(TEST_CORE) $(TEST_PACKET) $(TEST_PROCESS) $(TEST_SIGNALS) $(TEST_NFQUEUE)
+test: all $(TEST_CORE) $(TEST_PACKET) $(TEST_PROCESS) $(TEST_SIGNALS) $(TEST_NFQUEUE) $(TEST_RAWSEND)
 	scripts/test-cli-validation.sh $(FAKEHTTP)
 	$(TEST_CORE)
 	$(TEST_PACKET)
 	$(TEST_PROCESS)
 	scripts/test-signal-validation.sh $(TEST_SIGNALS)
 	$(TEST_NFQUEUE)
+	$(TEST_RAWSEND)
 
 clean:
 	$(RM) -r $(BUILDDIR)
@@ -87,6 +89,11 @@ $(TEST_NFQUEUE): tests/test-nfqueue-loop.c $(SRCDIR)/nfqueue.c \
 	$(BUILDDIR)/globvar.o $(BUILDDIR)/logging.o $(BUILDDIR)/signals.o
 	$(CC) $(CFLAGS) $(filter-out $(SRCDIR)/nfqueue.c,$^) -o $@ $(LDFLAGS) \
 		-Wl,--wrap=poll -Wl,--wrap=recv -Wl,--wrap=nfq_handle_packet
+
+$(TEST_RAWSEND): tests/test-rawsend-ttl.c $(SRCDIR)/rawsend.c \
+	$(BUILDDIR)/globvar.o $(BUILDDIR)/logging.o $(BUILDDIR)/ipv4pkt.o \
+	$(BUILDDIR)/ipv6pkt.o $(BUILDDIR)/payload.o $(BUILDDIR)/srcinfo.o
+	$(CC) $(CFLAGS) $(filter-out $(SRCDIR)/rawsend.c,$^) -o $@ $(LDFLAGS)
 
 install: all
 	mkdir -p $(DESTDIR)$(BINDIR)

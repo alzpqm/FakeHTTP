@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Release tag, for example openwrt-99.2-r15
+        description: Release tag, for example openwrt-99.3-r1
         type: string
         required: true
 
@@ -85,7 +85,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
-          release_notes="docs/release-${RELEASE_TAG##*-}.md"
+          release_notes="docs/release-${RELEASE_TAG#openwrt-}.md"
           test -f "$release_notes"
           git config user.name 'Codex'
           git config user.email 'codex@local.invalid'

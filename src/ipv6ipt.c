@@ -98,10 +98,13 @@ int fh_ipt6_setup(void)
 
         {"ip6tables", "-w", "-t", "mangle", "-N", "FAKEHTTP_D", NULL},
 
-        {"ip6tables", "-w", "-t", "mangle", "-I", "PREROUTING", "-j",
+        /* NF_ACCEPT ends this base chain after queue reinjection. Keep
+           existing routing marks and other mangle rules ahead of our terminal
+           hook. */
+        {"ip6tables", "-w", "-t", "mangle", "-A", "PREROUTING", "-j",
          "FAKEHTTP_S", NULL},
 
-        {"ip6tables", "-w", "-t", "mangle", "-I", "POSTROUTING", "-j",
+        {"ip6tables", "-w", "-t", "mangle", "-A", "POSTROUTING", "-j",
          "FAKEHTTP_D", NULL},
 
         {"ip6tables", "-w", "-t", "mangle", "-N", "FAKEHTTP_R", NULL},

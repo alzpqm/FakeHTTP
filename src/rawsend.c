@@ -46,7 +46,12 @@ static int sockfd = -1;
 
 static int hop_estimate(uint8_t ttl)
 {
-    if (ttl <= 64) {
+    /* Infer the nearest conventional initial TTL, including 32. This is a
+       heuristic, not a guarantee for arbitrary initial TTLs/asymmetric paths.
+     */
+    if (ttl <= 32) {
+        return 32 - ttl;
+    } else if (ttl <= 64) {
         return 64 - ttl;
     } else if (ttl <= 128) {
         return 128 - ttl;

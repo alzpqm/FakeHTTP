@@ -98,10 +98,13 @@ int fh_ipt4_setup(void)
 
         {"iptables", "-w", "-t", "mangle", "-N", "FAKEHTTP_D", NULL},
 
-        {"iptables", "-w", "-t", "mangle", "-I", "PREROUTING", "-j",
+        /* NF_ACCEPT ends this base chain after queue reinjection. Keep
+           existing routing marks and other mangle rules ahead of our terminal
+           hook. */
+        {"iptables", "-w", "-t", "mangle", "-A", "PREROUTING", "-j",
          "FAKEHTTP_S", NULL},
 
-        {"iptables", "-w", "-t", "mangle", "-I", "POSTROUTING", "-j",
+        {"iptables", "-w", "-t", "mangle", "-A", "POSTROUTING", "-j",
          "FAKEHTTP_D", NULL},
 
         {"iptables", "-w", "-t", "mangle", "-N", "FAKEHTTP_R", NULL},

@@ -18,26 +18,26 @@ architecture.
 | 24.10, 23.05, 22.03 | IPK / `opkg` | firewall4 / nftables | Build with a matching SDK |
 | 21.02 | IPK / `opkg` | firewall3 / iptables | Build with a matching SDK |
 
-The current FakeHTTP and LuCI package versions are both `99.2-r16`. OpenWrt
+The current FakeHTTP and LuCI package versions are both `99.3-r1`. OpenWrt
 19.07 and older are end-of-life and are not supported by this project.
 
 ## Install on OpenWrt 25.12+
 
 Download both x86_64 APKs from the
-[99.2-r16 release](https://github.com/alzpqm/FakeHTTP/releases/tag/openwrt-99.2-r16),
+[99.3-r1 release](https://github.com/alzpqm/FakeHTTP/releases/tag/openwrt-99.3-r1),
 verify their checksums, and copy them to the router:
 
 ```sh
-scp fakehttp-99.2-r16.apk root@192.168.1.1:/tmp/
-scp luci-app-fakehttp-99.2-r16.apk root@192.168.1.1:/tmp/
+scp fakehttp-99.3-r1.apk root@192.168.1.1:/tmp/
+scp luci-app-fakehttp-99.3-r1.apk root@192.168.1.1:/tmp/
 ssh root@192.168.1.1
-apk add --allow-untrusted /tmp/fakehttp-99.2-r16.apk
-apk add --allow-untrusted /tmp/luci-app-fakehttp-99.2-r16.apk
+apk add --allow-untrusted /tmp/fakehttp-99.3-r1.apk
+apk add --allow-untrusted /tmp/luci-app-fakehttp-99.3-r1.apk
 ```
 
-The APKs must match the router release and architecture. r16 is built with the
-OpenWrt 25.12.5 x86_64 SDK and checked with musl target tests; this release was
-not installed on a production router.
+The APKs must match the router release and architecture. 99.3-r1 is built with the
+OpenWrt 25.12.5 x86_64 SDK and installed on matching hardware. See the release
+notes for bounded acceptance results and remaining limitations.
 
 ## Build OpenWrt 25.12+ APKs
 
