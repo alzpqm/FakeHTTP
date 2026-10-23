@@ -1,5 +1,9 @@
 # FakeHTTP
 
+> 維護整合入口：[FakeTraffic](https://github.com/alzpqm/FakeTraffic)。後續 TCP／UDP
+> 產品來源、共同建置與管理入口在新專案維護。本倉庫保留歷史來源、標籤及附件
+> 作追溯與回復；遷移及驗收狀態請見新專案的整合交接。勿因此停用既有引擎。
+
 [English](README.en.md)
 
 FakeHTTP 透過 Linux Netfilter Queue（NFQUEUE），在 TCP 連線建立時送出
