@@ -1,5 +1,11 @@
 # FakeHTTP
 
+> **FakeHTTP has been superseded by [FakeTraffic](https://github.com/alzpqm/FakeTraffic).**
+> FakeTraffic unifies TCP and UDP/SIP configuration in one service and LuCI page.
+> This archived repository and its releases are retained for reference and rollback.
+> Back up your configuration and follow the [migration guide](https://github.com/alzpqm/FakeTraffic/blob/main/docs/migration.md).
+> Do not run the legacy service alongside FakeTraffic on the same traffic.
+
 [正體中文](README.md)
 
 FakeHTTP makes TCP connection setup look like HTTP/HTTPS traffic using Linux

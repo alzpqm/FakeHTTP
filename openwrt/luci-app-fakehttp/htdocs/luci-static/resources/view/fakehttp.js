@@ -307,6 +307,11 @@ return view.extend({
 				serviceReadonly = m.readonly === true;
 				var service = E('div', { 'class': 'cbi-section' }, [
 					E('style', { 'type': 'text/css' }, pageStyle),
+					E('div', { 'class': 'alert-message warning' }, [
+						'FakeHTTP 已由 FakeTraffic 取代 / FakeHTTP has been superseded by ',
+						E('a', { 'href': 'https://github.com/alzpqm/FakeTraffic', 'target': '_blank', 'rel': 'noopener noreferrer' }, 'FakeTraffic'),
+						'。請勿與新版同時處理相同流量 / Do not run both on the same traffic.'
+					]),
 					E('h3', {}, _('Service')),
 					E('div', { 'class': 'cbi-section-node' }, [
 						E('div', { 'class': 'fakehttp-service-row' }, [
